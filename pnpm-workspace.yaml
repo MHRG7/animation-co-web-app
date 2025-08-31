@@ -1,0 +1,14 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Shared dependencies that should be installed at root level
+shared-workspace-lockfile: true
+
+# Prevent hoisting for better dependency isolation
+hoist: false
+hoist-pattern:
+  - '@types/*'
+  - 'eslint*'
+  - 'prettier*'
+  - 'typescript'

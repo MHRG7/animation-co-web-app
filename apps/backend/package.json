@@ -1,0 +1,61 @@
+{
+  "name": "@animation-co/backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Express.js backend API with TypeScript and ESM",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node --experimental-strip-types src/index.ts",
+    "start:prod": "node dist/index.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "express": "^5",
+    "cors": "^2",
+    "helmet": "^8",
+    "morgan": "^1",
+    "compression": "^1",
+    "rate-limiter-flexible": "^7",
+    "joi": "^18",
+    "bcryptjs": "^3",
+    "jsonwebtoken": "^9",
+    "prisma": "^6",
+    "@prisma/client": "^6",
+    "winston": "^3",
+    "dotenv": "^17"
+  },
+  "devDependencies": {
+    "@types/express": "^5",
+    "@types/cors": "^2",
+    "@types/morgan": "^1",
+    "@types/compression": "^1",
+    "@types/jsonwebtoken": "^9",
+    "@types/node": "^22.18.0",
+    "tsx": "^4",
+    "tsc-alias": "^1",
+    "rimraf": "^6",
+    "supertest": "^7",
+    "@types/supertest": "^6"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10.0.0"
+  },
+  "keywords": [
+    "express",
+    "typescript",
+    "esm",
+    "backend",
+    "api"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "animation-co-web-app",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Professional animation company web application with portfolio management",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive dev",
+    "build": "pnpm --recursive build",
+    "test": "pnpm --recursive test",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --recursive typecheck",
+    "clean": "pnpm --recursive clean",
+    "backend:dev": "pnpm --filter ./apps/backend dev",
+    "frontend:dev": "pnpm --filter ./apps/frontend dev",
+    "backend:build": "pnpm --filter ./apps/backend build",
+    "frontend:build": "pnpm --filter ./apps/frontend build",
+    "install:all": "pnpm install",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:fix": "pnpm --recursive lint:fix",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-prettier": "^5",
+    "globals": "^16",
+    "prettier": "^3",
+    "typescript": "^5",
+    "typescript-eslint": "^8",
+    "tsx": "^4",
+    "vitest": "^3",
+    "@vitest/ui": "^3",
+    "husky": "^9",
+    "lint-staged": "^16"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/animation-co-web-app.git"
+  },
+  "keywords": [
+    "animation",
+    "portfolio",
+    "web-app",
+    "typescript",
+    "react",
+    "express",
+    "monorepo"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
