@@ -80,9 +80,6 @@ importers:
       morgan:
         specifier: ^1
         version: 1.10.1
-      prisma:
-        specifier: ^6
-        version: 6.15.0(typescript@5.9.2)
       rate-limiter-flexible:
         specifier: ^7
         version: 7.2.0
@@ -111,6 +108,9 @@ importers:
       '@types/supertest':
         specifier: ^6
         version: 6.0.3
+      prisma:
+        specifier: ^6
+        version: 6.15.0(typescript@5.9.2)
       rimraf:
         specifier: ^6
         version: 6.0.1

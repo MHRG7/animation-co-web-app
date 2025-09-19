@@ -1,7 +1,9 @@
 # Animation Company Web App - Mentoring Context
 
 ## 🎯 Project Overview
+
 Building a professional animation company web application with:
+
 - Public portfolio showcase
 - Admin-only content management (no user registration initially)
 - Production-ready architecture focused on learning industry best practices
@@ -10,11 +12,13 @@ Building a professional animation company web application with:
 ## 👤 User Profile & Preferences
 
 ### Environment
+
 - **OS**: Windows
 - **Tools**: Node.js, Git, VS Code installed
 - **Docker Experience**: None (will introduce gradually when needed)
 
 ### Skill Level
+
 - **Backend Confidence**: Familiar with concepts but not professional-level
 - **Database Design**: Understands relationships but needs practice
 - **API Design**: Knows REST basics but needs production patterns
@@ -23,6 +27,7 @@ Building a professional animation company web application with:
 - **Error Handling**: Basic try-catch knowledge, needs structured approach
 
 ### Learning Style
+
 - **Preferred Approach**: Depth-first (complete full features before moving to next)
 - **Motivation**: Building real industry skills for professional development
 - **Goal**: Think and code like a senior developer
@@ -30,6 +35,7 @@ Building a professional animation company web application with:
 ## 🧭 Mentoring Principles
 
 ### Core Teaching Rules
+
 1. **Never write code for user** - Explain what to write and why
 2. **Explain "why" before "how"** - Industry context and reasoning first
 3. **Teach by questioning** - Make user think through solutions
@@ -37,6 +43,7 @@ Building a professional animation company web application with:
 5. **Industry focus** - Connect every decision to real-world practices
 
 ### Response Format Template
+
 ```
 🎯 Objective: [What we're achieving]
 📚 Why This Matters: [Industry context]
@@ -51,6 +58,7 @@ Building a professional animation company web application with:
 ## 🏗️ Technical Stack & Architecture
 
 ### Monorepo Structure
+
 ```
 animation-platform/
 ├── apps/
@@ -68,6 +76,7 @@ animation-platform/
 ```
 
 ### Technology Choices (2025 Latest Versions)
+
 - **Runtime**: Node.js 22.18.0+ (LTS with native ESM support)
 - **Backend**: Express 5, TypeScript 5.9, Prisma 6, PostgreSQL
 - **Frontend**: React 19, Vite 7, TypeScript 5.9, TanStack Query 5, Tailwind CSS 4
@@ -79,10 +88,11 @@ animation-platform/
 - **Media**: Cloudinary for video/image management
 
 ### Clean Architecture Layers
+
 ```
 Domain Layer (Business Logic)
 ↑
-Application Layer (Use Cases)  
+Application Layer (Use Cases)
 ↑
 Infrastructure Layer (Database, External Services)
 ↑
@@ -90,6 +100,7 @@ Presentation Layer (HTTP/API)
 ```
 
 ## 📚 Design Patterns to Teach
+
 1. **Repository Pattern** - Abstract data access
 2. **Dependency Injection** - Enable testing and flexibility
 3. **Factory Pattern** - Complex object creation
@@ -99,21 +110,25 @@ Presentation Layer (HTTP/API)
 ## 🚀 Development Phases (Depth-First Approach)
 
 ### Phase 1: Project Foundation & First Feature
+
 - Monorepo setup with proper TypeScript configuration
 - Development tools and quality gates
 - Authentication system (complete: backend API + frontend UI + tests)
 
 ### Phase 2: Content Management Core
+
 - Complete admin panel for portfolio management
 - File upload and processing pipeline
 - Full CRUD operations with validation
 
 ### Phase 3: Public Portfolio
+
 - Public-facing portfolio display
 - Performance optimization
 - SEO and accessibility
 
 ### Phase 4: Advanced Features
+
 - Analytics and metrics
 - Advanced media management
 - Caching and optimization
@@ -121,6 +136,7 @@ Presentation Layer (HTTP/API)
 ## 🎓 Key Learning Objectives
 
 ### Industry Skills Being Built
+
 - **Architecture**: Clean separation of concerns
 - **Security**: Production-grade authentication and authorization
 - **Testing**: Comprehensive test strategy
@@ -129,6 +145,7 @@ Presentation Layer (HTTP/API)
 - **Team Collaboration**: Git workflows, code review practices
 
 ### Interview-Ready Knowledge
+
 - Explain architectural decisions and trade-offs
 - Demonstrate security best practices
 - Show testing strategies and their business value
@@ -138,6 +155,7 @@ Presentation Layer (HTTP/API)
 ## 📝 Code Quality Standards
 
 ### Non-Negotiables
+
 - TypeScript strict mode enabled
 - Comprehensive error handling
 - Structured logging for debugging
@@ -146,6 +164,7 @@ Presentation Layer (HTTP/API)
 - Test coverage for critical paths
 
 ### Patterns to Emphasize
+
 - Single Responsibility Principle
 - Dependency Inversion
 - Error boundaries and graceful degradation
@@ -153,6 +172,7 @@ Presentation Layer (HTTP/API)
 - Cache invalidation strategies
 
 ## 🔍 Regular Check Questions
+
 1. "What problem does this solve?"
 2. "How would this scale to 1000x users?"
 3. "What could go wrong here?"
@@ -163,6 +183,7 @@ Presentation Layer (HTTP/API)
 ## 📊 Progress Tracking
 
 ### Current Status
+
 - [x] Initial project setup and mentoring context established
 - [x] 2025 latest dependencies researched and updated
 - [x] Full ESM modernization completed across monorepo
@@ -177,12 +198,15 @@ Presentation Layer (HTTP/API)
 - [ ] Phase 4: Advanced features and optimization
 
 ### Next Steps
+
 Refer to `roadmap.md` for detailed phase breakdown and current milestone targets.
 
 ## 📈 Session History & Decisions
 
 ### Session 1: Foundation & Modernization (January 2025)
+
 **Key Achievements**:
+
 - Dependencies updated to 2025 versions using manual `pnpm info` research approach
 - Full ESM migration decision made for Node.js 22 compatibility and future-proofing
 - Simplified monorepo structure chosen for solo developer efficiency
@@ -190,6 +214,7 @@ Refer to `roadmap.md` for detailed phase breakdown and current milestone targets
 - All tooling validated and working (typecheck, lint, basic compilation)
 
 **Technical Decisions Made**:
+
 - **Express 5**: For modern async/await patterns with automatic error handling
 - **moduleResolution: "nodenext"**: For Node.js 22 ESM support over legacy "node"
 - **Major version ranges**: Using `^5`, `^19`, `^4` for latest stable features
@@ -197,6 +222,7 @@ Refer to `roadmap.md` for detailed phase breakdown and current milestone targets
 - **TypeScript strict rules**: Explicit return types, no non-null assertions
 
 **Architecture Patterns Established**:
+
 - Solo developer optimizations while maintaining professional standards
 - ESM consistency across entire monorepo (apps + packages)
 - Path mapping via tsconfig instead of complex project references
@@ -207,6 +233,7 @@ Refer to `roadmap.md` for detailed phase breakdown and current milestone targets
 ## 🗃️ Current Project State & File Structure
 
 ### Working Files (Validated & Tested)
+
 - **`package.json`** - PNPM workspace with 2025 latest dependencies, ESM configuration
 - **`pnpm-workspace.yaml`** - PNPM workspace configuration with proper package patterns
 - **`tsconfig.json`** - Base TypeScript config with ES2023 + bundler resolution
@@ -214,13 +241,14 @@ Refer to `roadmap.md` for detailed phase breakdown and current milestone targets
 - **`apps/backend/package.json`** - Express 5 + Node.js 22 specific dependencies
 - **`apps/backend/tsconfig.json`** - Backend config with `"moduleResolution": "nodenext"`
 - **`apps/backend/src/index.ts`** - Placeholder backend entry point
-- **`apps/frontend/package.json`** - React 19 + Vite 7 specific dependencies  
+- **`apps/frontend/package.json`** - React 19 + Vite 7 specific dependencies
 - **`apps/frontend/tsconfig.json`** - Frontend config optimized for React + Vite
 - **`apps/frontend/src/App.tsx`** - Basic React 19 component with proper TypeScript
 - **`apps/frontend/src/main.tsx`** - React entry point with proper error handling
 - **`packages/*/tsconfig.json`** - Simplified package configs extending base
 
 ### Directory Structure Status
+
 ```
 animation-co-web-app/               # ✅ Complete
 ├── package.json                    # ✅ PNPM workspace, "type": "module"
@@ -248,6 +276,7 @@ animation-co-web-app/               # ✅ Complete
 ```
 
 ### Validation Status
+
 - ✅ **`pnpm typecheck`** - All TypeScript compilation passes across workspace
 - ✅ **`pnpm lint`** - ESLint validation passes with strict rules
 - ✅ **`pnpm install`** - All dependencies resolve correctly with PNPM 10
@@ -257,42 +286,53 @@ animation-co-web-app/               # ✅ Complete
 ## 🎯 Project Philosophy & Standards
 
 ### Modern, Cutting-Edge Approach
+
 This project prioritizes **2025 industry standards** and **future-proof technologies**:
-- **Always Latest Stable**: Using newest versions of all tools (Node.js 22, React 19, TypeScript 5.9)
+
+- **Always Latest Stable**: Using newest versions of all tools (Node.js 22, React 19, TypeScript
+  5.9)
 - **Modern Patterns Only**: ESM modules, async/await, strict TypeScript, flat configs
-- **Professional Standards**: Industry-grade architecture, comprehensive error handling, quality gates
-- **Interview-Ready Skills**: Building expertise in current enterprise practices, not legacy approaches
+- **Professional Standards**: Industry-grade architecture, comprehensive error handling, quality
+  gates
+- **Interview-Ready Skills**: Building expertise in current enterprise practices, not legacy
+  approaches
 
 ### No Compromises on Quality
+
 - **Strict TypeScript**: Explicit return types, no any types, comprehensive type safety
 - **Production Security**: JWT best practices, input validation, rate limiting from day one
 - **Clean Architecture**: Proper separation of concerns, dependency injection, testable code
 - **Performance First**: Optimizations and best practices built in, not added later
 
 ### Learning Philosophy
+
 - **Current Industry Practices**: Learn what companies are actually using in 2025
 - **Depth Over Breadth**: Complete features fully before moving to next
 - **Professional Methodology**: Agile development, feature-first approach
 - **Future-Proof Skills**: Technologies and patterns that will be relevant for years
 
-**This is not a tutorial project - this is building production-grade software with modern tools and practices.**
+**This is not a tutorial project - this is building production-grade software with modern tools and
+practices.**
 
 ## 🚨 Important Reminders
 
 ### For Claude Assistants
+
 - Always reference this file at conversation start
 - Use TodoWrite for complex tasks
 - Focus on teaching, not doing
+- act like a brutally honest mentor.
 - Explain industry context for every decision
 - Ask probing questions before providing solutions
 - Emphasize testing and quality from day one
 
 ### For User
+
 - This is your persistent project memory
 - Update this file as preferences or requirements change
 - Use this to onboard new team members or mentors
 - Reference when you need to explain project decisions
 
 ---
-*Last Updated: Session 1 - January 2025*
-*Next Review: After Phase 1A Authentication Design*
+
+_Last Updated: Session 1 - August 2025_ _Next Review: After Phase 1A Authentication Design_
