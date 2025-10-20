@@ -1,11 +1,10 @@
-import { PrismaClient } from '../generated/prisma/index.js';
+import { PrismaClient } from '@prisma/client';
 
-let prisma: PrismaClient;
+let prisma: PrismaClient | undefined = undefined;
 
 export const getPrisma = (): PrismaClient => {
-  if (!prisma) {
-    prisma = new PrismaClient();
-  }
+  prisma ??= new PrismaClient();
+
   return prisma;
 };
 
