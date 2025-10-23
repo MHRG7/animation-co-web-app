@@ -35,7 +35,10 @@ app.use(express.json());
 app.use(compression());
 
 // 6. Rate limiting middlware - prevent abuse
-app.use(rateLimiterMiddleware);
+// Disable in test environment
+if (process.env['NODE_ENV'] !== 'test') {
+  app.use(rateLimiterMiddleware);
+}
 
 // 7. Routes
 app.use('/auth', authRoutes);
