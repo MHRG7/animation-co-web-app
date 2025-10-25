@@ -27,14 +27,14 @@ Professional animation company web application with admin-only content managemen
 
 ## 📊 CURRENT STATUS
 
-**Last Review**: October 23, 2025
+**Last Review**: October 25, 2025
 **Build Status**: ✅ Compiles (TypeScript + ESLint pass)
 **Test Status**: ✅ 3/3 integration tests passing
-**Completion**: ~70% of Phase 1A
+**Completion**: ~85% of Phase 1A
 
 ### ✅ What's Working
 - **TypeScript/ESLint**: Code compiles cleanly, no errors
-- **Zod v4**: Correct usage of `z.email()` API (not v3 syntax)
+- **Zod v4**: Correct usage of `z.email()`, `z.enum()`, `z.treeifyError()` APIs
 - **Express 5**: Proper async handler typing with return statements
 - **Testing Infrastructure**: Vitest + Supertest configured with test database
 - **Integration Tests**: 3 passing tests for registration endpoint
@@ -43,7 +43,11 @@ Professional animation company web application with admin-only content managemen
   - ✅ Invalid input validation (400 response with details)
 - **Test Database**: Separate PostgreSQL database (`animation_app_test`) in Docker
 - **Cross-Platform Testing**: `cross-env` for Windows/Mac/Linux compatibility
-- **Basic Environment Config**: `.env` exists with `DATABASE_URL`, `DATABASE_URL_TEST`, `PORT`, `NODE_ENV`
+- **Environment Configuration**: Centralized `config/env.ts` with Zod validation
+  - ✅ All env vars validated on startup (fail-fast)
+  - ✅ Type-safe config exports (`env.JWT_SECRET`, `env.BCRYPT_ROUNDS`, etc.)
+  - ✅ `.env.example` template for new developers
+  - ✅ No hardcoded values (CORS, bcrypt rounds, rate limits all configurable)
 - **Registration Endpoint**: Logic implemented, tested, and proven to work
 - **Validation Middleware**: Zod integration working correctly
 - **Docker + PostgreSQL**: Both dev and test databases running
@@ -51,35 +55,14 @@ Professional animation company web application with admin-only content managemen
 
 ### ❌ Critical Gaps (Blocking Phase 1A Completion)
 
-1. **Missing Environment Variables**
-   - No `JWT_SECRET` (required for Phase 1B login)
-   - No `BCRYPT_ROUNDS` (currently hardcoded to 12)
-   - No `FRONTEND_URL` (CORS origin hardcoded)
-   - No `RATE_LIMIT_*` config (too aggressive for dev)
-   - No `.env.example` template
-
-3. **Console Logging Instead of Winston**
-   - [auth.ts:35](apps/backend/src/routes/auth.ts#L35) uses `console.error()`
+1. **Console Logging Instead of Winston**
+   - `console.error()` used in error handling
    - Winston installed but not configured
    - No structured logging or log levels
 
-4. **Hardcoded Configuration**
-   - CORS origin: `http://localhost:5137` in [app.ts:26](apps/backend/src/app.ts#L26)
-   - Bcrypt rounds: `12` in [auth.ts:20](apps/backend/src/routes/auth.ts#L20)
-   - Rate limiter settings not environment-aware
-
 ### ⚠️ Medium Priority Issues
 
-5. **Rate Limiter Too Aggressive**
-   - 10 requests/minute breaks development workflow
-   - Should be: 100/min for dev, 10-50/min for production
-
-6. **No Environment Validation**
-   - Server starts even if critical env vars missing
-   - No Zod schema validating `process.env` on startup
-   - Runtime errors instead of fast-fail
-
-7. **Prisma Singleton Incomplete**
+2. **Prisma Singleton Incomplete**
    - No graceful shutdown handling
    - No query logging in development
    - Missing connection pool configuration
@@ -107,63 +90,42 @@ Professional animation company web application with admin-only content managemen
 
 ---
 
-### Priority 2: Environment Configuration (CURRENT)
-**Why**: Hardcoded values prevent deployment to different environments and expose security issues.
+### ✅ Priority 2: Environment Configuration - COMPLETE
+**Status**: All environment variables configured and validated
 
-**Tasks**:
-1. Add to `apps/backend/.env`:
-   ```bash
-   JWT_SECRET=<generate-with-openssl-rand-base64-32>
-   JWT_EXPIRES_IN=15m
-   JWT_REFRESH_EXPIRES_IN=7d
-   BCRYPT_ROUNDS=10
-   FRONTEND_URL=http://localhost:5137
-   RATE_LIMIT_WINDOW_MS=60000
-   RATE_LIMIT_MAX=100
-   ```
+**What was implemented:**
+- ✅ `src/config/env.ts` - Zod schema for environment validation
+- ✅ `.env.example` - Template documenting all required variables
+- ✅ Added all missing env vars: `JWT_SECRET`, `BCRYPT_ROUNDS`, `FRONTEND_URL`, `RATE_LIMIT_*`
+- ✅ Removed hardcoded values from codebase:
+  - CORS origin now uses `env.FRONTEND_URL`
+  - Bcrypt rounds now uses `env.BCRYPT_ROUNDS`
+  - Rate limiter now uses `env.RATE_LIMIT_MAX` and `env.RATE_LIMIT_WINDOW_MS`
+  - Server port now uses `env.PORT`
+- ✅ Fail-fast validation: Server won't start if env vars are missing/invalid
+- ✅ Type-safe config: TypeScript knows all env vars are strings/numbers
 
-2. Create `.env.example` (template without secrets)
-
-3. Create `src/config/env.ts` to:
-   - Validate env vars with Zod on startup
-   - Export typed config object
-   - Fail fast if required vars missing
-
-4. Update code to use config:
-   - [app.ts:26](apps/backend/src/app.ts#L26) CORS origin
-   - [auth.ts:20](apps/backend/src/routes/auth.ts#L20) bcrypt rounds
-   - Rate limiter settings
-
-**Research Questions**:
-1. How do you generate secure random strings for `JWT_SECRET`?
-2. Why validate environment variables on startup vs. runtime?
-3. What happens if you deploy with a weak JWT secret?
+**Key learnings:**
+- Zod v4 API changes (`z.enum()` for enums, `z.treeifyError()` for errors)
+- Environment validation patterns (validate on startup, not runtime)
+- 12-factor app principles (configuration via environment)
 
 ---
 
-### Priority 3: Winston Logging
+### Priority 3: Winston Logging (CURRENT)
 **Why**: `console.log` doesn't scale. Production needs structured logs with levels, metadata, and persistence.
 
 **Tasks**:
 1. Create `src/lib/logger.ts` with Winston setup
 2. Configure log levels (error, warn, info, debug)
-3. Replace [auth.ts:35](apps/backend/src/routes/auth.ts#L35) `console.error()` with `logger.error()`
-4. Add request logging to capture user actions
+3. Replace `console.error()` with `logger.error()`
+4. Add request logging middleware
 
 **Research Questions**:
 1. What's the difference between log levels (error vs warn vs info)?
 2. How do structured logs help with debugging production issues?
 3. What information should you log vs. avoid logging (PII, passwords)?
 
----
-
-### Priority 4: Environment-Based Rate Limiting
-**Tasks**:
-1. Read `RATE_LIMIT_*` from env config
-2. Set development defaults (100/min) vs production (10/min)
-3. Test that development workflow isn't blocked
-
-**Why**: Different environments have different needs. Development needs speed, production needs protection.
 
 ---
 
@@ -174,12 +136,14 @@ Before moving to Phase 1B (login implementation), you must have:
 - ✅ Code compiles (`pnpm typecheck` passes) - **DONE**
 - ✅ Linting passes (`pnpm lint` passes) - **DONE**
 - ✅ **Integration tests written and passing** (3+ test cases) - **DONE**
-- ❌ **Environment variables configured** (`.env` + `.env.example`)
+- ✅ **Environment variables configured** (`.env` + `.env.example`) - **DONE**
 - ❌ **Winston logging implemented** (no `console.*` in code)
-- ❌ **Hardcoded values removed** (config from env vars)
+- ✅ **Hardcoded values removed** (config from env vars) - **DONE**
 - ✅ Registration endpoint tested - **DONE**
 
-**Current: 4/7 complete (~70%)**
+**Current: 6/7 complete (~85%)**
+
+**Only Winston logging remains before Phase 1A is complete!**
 
 ---
 
