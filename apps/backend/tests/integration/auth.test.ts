@@ -3,12 +3,27 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import { resetTestDatabase, disconnectDatabase } from '../helpers/testDb.js';
 
-// Run once before all tests in this file
+//Type definitions for API responses
+interface RegisterSuccessResponse {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    createdAt: string;
+  };
+}
+
+interface ErrorResponse {
+  error: string;
+  details?: { field: string; message: string }[];
+}
+
+// Run once before all tests in this file - schema setup (slow)
 beforeAll(async () => {
   await resetTestDatabase();
-});
+}, 30000);
 
-// Run before each test to ensure clean state
+// Run before each test - just clear data (fast)
 beforeEach(async () => {
   await resetTestDatabase();
 });
@@ -29,14 +44,15 @@ describe('POST /auth/register', () => {
     // Assert response status
     expect(response.status).toBe(201);
 
+    const body = response.body as RegisterSuccessResponse;
     // Assert response body structure
-    expect(response.body).toHaveProperty('user');
-    expect(response.body.user).toHaveProperty('id');
-    expect(response.body.user.email).toBe('test@example.com');
-    expect(response.body.user.role).toBe('USER');
+    expect(body).toHaveProperty('user');
+    expect(body.user).toHaveProperty('id');
+    expect(body.user.email).toBe('test@example.com');
+    expect(body.user.role).toBe('USER');
 
     // Assert password is NOT returned
-    expect(response.body.user).not.toHaveProperty('password');
+    expect(body.user).not.toHaveProperty('password');
   });
 
   it('should reject duplicate email with 409 status', async () => {
@@ -52,8 +68,9 @@ describe('POST /auth/register', () => {
       password: 'DifferentPassword1!',
     });
 
+    const body = response.body as ErrorResponse;
     expect(response.status).toBe(409);
-    expect(response.body.error).toBe('Email already exists');
+    expect(body.error).toBe('Email already exists');
   });
 
   it('should validate input and reject invalid data', async () => {
@@ -62,8 +79,9 @@ describe('POST /auth/register', () => {
       password: 'weak',
     });
 
+    const body = response.body as ErrorResponse;
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Validation failed');
-    expect(response.body.details).toBeInstanceOf(Array);
+    expect(body.error).toBe('Validation failed');
+    expect(body.details).toBeInstanceOf(Array);
   });
 });

@@ -1,5 +1,6 @@
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import { env, isProduction } from './config/env.js';
 import cors from 'cors';
 import morgan from 'morgan';
 import compression from 'compression';
@@ -20,10 +21,7 @@ app.use(morgan('dev'));
 // 3. CORS - control who can call your API
 app.use(
   cors({
-    origin:
-      process.env['NODE_ENV'] === 'production'
-        ? 'https://yourdomain.com'
-        : 'http://localhost:5137',
+    origin: isProduction ? 'https://yourdomain' : env.FRONTEND_URL,
     credentials: true, // Allow cookies
   })
 );

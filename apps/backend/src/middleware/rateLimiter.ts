@@ -1,9 +1,10 @@
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Request, Response, NextFunction } from 'express';
+import { env } from '../config/env.js';
 
 const rateLimiter = new RateLimiterMemory({
-  points: 10, // Number of requests allowed
-  duration: 60, // Per 60 seconds
+  points: env.RATE_LIMIT_MAX, // Number of requests allowed
+  duration: env.RATE_LIMIT_WINDOW_MS / 1000, // Per 60 seconds
 });
 
 export const rateLimiterMiddleware = async (

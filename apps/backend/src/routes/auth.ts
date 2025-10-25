@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { env } from '../config/env.js';
 import bcrypt from 'bcryptjs';
 import getPrisma from '../lib/prisma.js';
 import { validate } from '../middleware/validation.js';
@@ -17,7 +18,7 @@ router.post(
       const { email, password, role } = req.body;
 
       // Hash password
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
 
       // Create user
       const user = await prisma.user.create({
