@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import getPrisma from '../lib/prisma.js';
 import { validate } from '../middleware/validation.js';
 import { registerSchema, RegisterInput } from '../schemas/auth.schema.js';
+import logger from '../lib/logger.js';
 
 const router: Router = Router();
 
@@ -33,7 +34,7 @@ router.post(
       // Return respond
       return res.status(201).json({ user });
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', { error });
 
       // Modern type guard
       if (
