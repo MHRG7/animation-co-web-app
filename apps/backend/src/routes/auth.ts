@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { env } from '../config/env.js';
-import bcrypt from 'bcryptjs';
-import getPrisma from '../lib/prisma.js';
 import { validate } from '../middleware/validation.js';
-import { registerSchema, RegisterInput } from '../schemas/auth.schema.js';
+import {
+  registerSchema,
+  RegisterInput,
+  loginSchema,
+  LoginInput,
+} from '../schemas/auth.schema.js';
 import logger from '../lib/logger.js';
+import { login, register } from '../services/authService.js';
 
 const router: Router = Router();
 
@@ -14,24 +17,7 @@ router.post(
   validate(registerSchema),
   async (req: Request<unknown, unknown, RegisterInput>, res: Response) => {
     try {
-      const prisma = getPrisma();
-
-      const { email, password, role } = req.body;
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
-
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          role,
-        },
-        select: { id: true, email: true, role: true, createdAt: true },
-      });
-
-      // Return respond
+      const user = await register(req.body);
       return res.status(201).json({ user });
     } catch (error) {
       logger.error('Registration error:', { error });
@@ -47,6 +33,22 @@ router.post(
       }
 
       return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+router.post(
+  '/login',
+  validate(loginSchema),
+  async (req: Request<unknown, unknown, LoginInput>, res: Response) => {
+    try {
+      const result = await login(req.body);
+      return res.status(200).json(result);
+    } catch (error) {
+      logger.error('Login error:', { error });
+
+      // Security: Always return 401 for login failures (vague error)
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
   }
 );

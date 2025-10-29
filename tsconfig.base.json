@@ -11,6 +11,7 @@
     "outDir": "./dist",
     "removeComments": true,
     "isolatedModules": true,
+    "incremental": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

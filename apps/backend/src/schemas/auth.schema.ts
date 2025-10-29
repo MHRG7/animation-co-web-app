@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { UserRole } from '@prisma/client';
 
 export const registerSchema = z.object({
-  email: z.email({ message: 'Invalid email format' }).toLowerCase().trim(),
+  email: z.email({ error: 'Invalid email format' }).toLowerCase().trim(),
   password: z
-    .string({ message: 'Password is required' })
+    .string({ error: 'Password is required' })
     .min(8, 'Password must be at least 8 characters')
     .max(100, 'Password is too long')
     .regex(
@@ -14,4 +14,12 @@ export const registerSchema = z.object({
   role: z.enum(UserRole).optional().default(UserRole.USER),
 });
 
+export const loginSchema = z.object({
+  email: z.email({ error: 'Invalid email format' }).toLowerCase().trim(),
+  password: z
+    .string({ error: 'Password is required' })
+    .min(1, 'Password is required'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
