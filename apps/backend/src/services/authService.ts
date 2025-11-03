@@ -4,13 +4,7 @@ import { env } from '../config/env.js';
 import type { RegisterInput, LoginInput } from '../schemas/auth.schema.js';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
-
-// JWT payload interface
-interface JWTPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-}
+import { JWTPayload } from '../types/auth.js';
 
 interface RegisterResult {
   id: string;
@@ -29,6 +23,7 @@ interface LoginResult {
   };
 }
 
+// Register user service
 export async function register(data: RegisterInput): Promise<RegisterResult> {
   const prisma = getPrisma();
 
@@ -50,6 +45,7 @@ export async function register(data: RegisterInput): Promise<RegisterResult> {
   return user;
 }
 
+// Login user service
 export async function login(data: LoginInput): Promise<LoginResult> {
   const prisma = getPrisma();
 
@@ -111,6 +107,57 @@ export async function login(data: LoginInput): Promise<LoginResult> {
       role: user.role,
     },
   };
+}
+
+// Refresh access token service
+export async function refreshAccessToken(
+  refreshToken: string
+): Promise<{ accessToken: string }> {
+  const prisma = getPrisma();
+
+  // Verify refresh token signature
+  let decoded: JWTPayload;
+  try {
+    decoded = jwt.verify(refreshToken, env.JWT_SECRET) as JWTPayload;
+  } catch {
+    throw new Error('Invalid refresh token');
+  }
+
+  // Check if refresh token exists in database
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { token: refreshToken },
+  });
+
+  if (!storedToken) {
+    throw new Error('Refresh token not found');
+  }
+
+  // Check if refresh token expired (database expiry)
+  if (storedToken.expiresAt < new Date()) {
+    // Clean up expired token
+    await prisma.refreshToken.delete({
+      where: { id: storedToken.id },
+    });
+    throw new Error('Refresh token expired');
+  }
+
+  // Generate new access token
+  const newAccessToken = generateAccessToken({
+    userId: decoded.userId,
+    email: decoded.email,
+    role: decoded.role,
+  });
+
+  return { accessToken: newAccessToken };
+}
+
+export async function logout(refreshToken: string): Promise<void> {
+  const prisma = getPrisma();
+
+  // Delete refresh token from database (revoke it)
+  await prisma.refreshToken.delete({
+    where: { token: refreshToken },
+  });
 }
 
 /**
