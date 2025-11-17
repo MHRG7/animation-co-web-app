@@ -57,9 +57,9 @@ afterAll(async () => {
   await disconnectDatabase();
 });
 
-describe('POST /auth/register', () => {
+describe('POST /api/auth/register', () => {
   it('should successfully register a new user with valid data', async () => {
-    const response = await request(app).post('/auth/register').send({
+    const response = await request(app).post('/api/auth/register').send({
       email: 'test@example.com',
       password: 'Test1234!',
       role: 'USER',
@@ -81,13 +81,13 @@ describe('POST /auth/register', () => {
 
   it('should reject duplicate email with 409 status', async () => {
     // First registration
-    await request(app).post('/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       email: 'duplicate@example.com',
       password: 'Test1234!',
     });
 
     // Second registration with same email
-    const response = await request(app).post('/auth/register').send({
+    const response = await request(app).post('/api/auth/register').send({
       email: 'duplicate@example.com',
       password: 'DifferentPassword1!',
     });
@@ -98,7 +98,7 @@ describe('POST /auth/register', () => {
   });
 
   it('should validate input and reject invalid data', async () => {
-    const response = await request(app).post('/auth/register').send({
+    const response = await request(app).post('/api/auth/register').send({
       email: 'not-an-email',
       password: 'weak',
     });
@@ -110,7 +110,7 @@ describe('POST /auth/register', () => {
   });
 });
 
-describe('POST /auth/login', () => {
+describe('POST /api/auth/login', () => {
   it('should successfully login with valid credentials', async () => {
     // First register a user
     const registerData = {
@@ -119,10 +119,10 @@ describe('POST /auth/login', () => {
       role: 'USER',
     };
 
-    await request(app).post('/auth/register').send(registerData);
+    await request(app).post('/api/auth/register').send(registerData);
 
     // Login with same credentials
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
@@ -151,7 +151,7 @@ describe('POST /auth/login', () => {
   });
 
   it('should reject login with non-existent email', async () => {
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: 'nonexistent@example.com',
       password: 'Test1234!',
     });
@@ -172,9 +172,9 @@ describe('POST /auth/login', () => {
       password: 'CorrectPassword1!',
     };
 
-    await request(app).post('/auth/register').send(registerData);
+    await request(app).post('/api/auth/register').send(registerData);
 
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: 'WrongPassword1!',
     });
@@ -188,7 +188,7 @@ describe('POST /auth/login', () => {
   });
 
   it('should reject login with invalid input', async () => {
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: 'not-an-email',
       password: '',
     });
@@ -200,18 +200,18 @@ describe('POST /auth/login', () => {
   });
 });
 
-describe('GET /auth/me', () => {
+describe('GET /api/auth/me', () => {
   it('should return user info with valid token', async () => {
     // Register and login to get token
     const registerData = {
       email: 'tokentest@example.com',
       password: 'Test1234!',
     };
-    await request(app).post('/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       email: registerData.email,
       password: registerData.password,
     });
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
@@ -220,7 +220,7 @@ describe('GET /auth/me', () => {
 
     // Use token to access protected route
     const meResponse = await request(app)
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
     const meBody = meResponse.body as MeResponse;
@@ -234,7 +234,7 @@ describe('GET /auth/me', () => {
   });
 
   it('should return 401 when no token provided', async () => {
-    const response = await request(app).get('/auth/me');
+    const response = await request(app).get('/api/auth/me');
 
     const body = response.body as ErrorResponse;
     expect(response.status).toBe(401);
@@ -243,7 +243,7 @@ describe('GET /auth/me', () => {
 
   it('should return 401 when token format is invalid', async () => {
     const response = await request(app)
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', 'InvalidFormat');
 
     const body = response.body as ErrorResponse;
@@ -253,7 +253,7 @@ describe('GET /auth/me', () => {
 
   it('should return 401 when token is invalid', async () => {
     const response = await request(app)
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', 'Bearer invalid.token.here');
 
     const body = response.body as ErrorResponse;
@@ -270,7 +270,7 @@ describe('GET /auth/me', () => {
     );
 
     const response = await request(app)
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${expiredToken}`);
 
     const body = response.body as ErrorResponse;
@@ -279,7 +279,7 @@ describe('GET /auth/me', () => {
   });
 });
 
-describe('POST /auth/refresh', () => {
+describe('POST /api/auth/refresh', () => {
   it('should return new access token with valid refresh token', async () => {
     const registerData = {
       email: 'refresh@example.com',
@@ -287,12 +287,12 @@ describe('POST /auth/refresh', () => {
     };
 
     // Register and login to get token
-    await request(app).post('/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       email: registerData.email,
       password: registerData.password,
     });
 
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
@@ -301,7 +301,7 @@ describe('POST /auth/refresh', () => {
 
     // Use refresh token to get new access token
     const refreshResponse = await request(app)
-      .post('/auth/refresh')
+      .post('/api/auth/refresh')
       .send({ refreshToken });
 
     const refreshBody = refreshResponse.body as RefreshResponse;
@@ -313,14 +313,14 @@ describe('POST /auth/refresh', () => {
 
     // Verify new access token works
     const meResponse = await request(app)
-      .get('/auth/me')
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${refreshBody.accessToken}`);
 
     expect(meResponse.status).toBe(200);
   });
 
   it('should return 401 with invalid refresh token', async () => {
-    const response = await request(app).post('/auth/refresh').send({
+    const response = await request(app).post('/api/auth/refresh').send({
       refreshToken: 'Invalid.token.here',
     });
 
@@ -338,7 +338,7 @@ describe('POST /auth/refresh', () => {
     );
 
     const response = await request(app)
-      .post('/auth/refresh')
+      .post('/api/auth/refresh')
       .send({ refreshToken: expiredRefreshToken });
 
     const errorBody = response.body as ErrorResponse;
@@ -347,7 +347,7 @@ describe('POST /auth/refresh', () => {
   });
 
   it('should return 400 when refresh token is missing', async () => {
-    const response = await request(app).post('/auth/refresh').send({});
+    const response = await request(app).post('/api/auth/refresh').send({});
 
     const errorBody = response.body as ErrorResponse;
     expect(response.status).toBe(400);
@@ -355,19 +355,19 @@ describe('POST /auth/refresh', () => {
   });
 });
 
-describe('POST /auth/logout', () => {
+describe('POST /api/auth/logout', () => {
   it('should logout successfully with valid refresh token', async () => {
     const registerData = {
       email: 'logout@example.com',
       password: 'Test1234!',
     };
     // First register and login to get a refresh token
-    await request(app).post('/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       email: registerData.email,
       password: registerData.password,
     });
 
-    const loginResponse = await request(app).post('/auth/login').send({
+    const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
@@ -376,7 +376,7 @@ describe('POST /auth/logout', () => {
 
     // Logout with refresh token
     const logoutResponse = await request(app)
-      .post('/auth/logout')
+      .post('/api/auth/logout')
       .send({ refreshToken });
 
     // Assert 204 No Content
@@ -385,7 +385,7 @@ describe('POST /auth/logout', () => {
 
     // Verify refresh token is now invalid (deleted from DB)
     const refreshAttempt = await request(app)
-      .post('/auth/refresh')
+      .post('/api/auth/refresh')
       .send({ refreshToken });
 
     expect(refreshAttempt.status).toBe(401);
@@ -395,7 +395,7 @@ describe('POST /auth/logout', () => {
 
   it('should return 401 when logging out with invalid token', async () => {
     const response = await request(app)
-      .post('/auth/logout')
+      .post('/api/auth/logout')
       .send({ refreshToken: 'invalid.token.here' });
 
     const errorBody = response.body as ErrorResponse;
@@ -412,7 +412,7 @@ describe('POST /auth/logout', () => {
     );
 
     const response = await request(app)
-      .post('/auth/logout')
+      .post('/api/auth/logout')
       .send({ refreshToken: validButNotStoredToken });
 
     expect(response.status).toBe(401);
@@ -421,7 +421,7 @@ describe('POST /auth/logout', () => {
   });
 
   it('should return 400 when refresh token is missing', async () => {
-    const response = await request(app).post('/auth/logout').send({});
+    const response = await request(app).post('/api/auth/logout').send({});
 
     expect(response.status).toBe(400);
     const errorBody = response.body as ErrorResponse;

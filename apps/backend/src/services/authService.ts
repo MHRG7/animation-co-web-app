@@ -161,7 +161,7 @@ export async function logout(refreshToken: string): Promise<void> {
 }
 
 /**
- * Generate access tocken (short-lived)
+ * Generate access token (short-lived)
  */
 function generateAccessToken(payload: JWTPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, {

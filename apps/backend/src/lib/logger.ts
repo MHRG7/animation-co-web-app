@@ -30,7 +30,7 @@ const devFormat = printf(({ level, message, timestamp, ...metadata }) => {
 const logger = winston.createLogger({
   level: isDevelopment ? 'debug' : 'info', // More verbose in development
   format: combine(
-    errors({ stack: true }), // Include stack traces ffor errors
+    errors({ stack: true }), // Include stack traces for errors
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' })
   ),
   transports: [],

@@ -9,7 +9,7 @@ import authRoutes from './routes/auth.js';
 
 const app: Express = express();
 
-// Trust first proxy (for X-Forwarded-For headre)
+// Trust first proxy (for X-Forwarded-For header)
 app.set('trust proxy', 1);
 
 // 1. Security headers - ALWAYS FIRST
@@ -29,7 +29,7 @@ app.use(
 // 4. Body parsing - AFTER security, BEFORE routes
 app.use(express.json());
 
-// 5. Compression - reduce responce size
+// 5. Compression - reduce response size
 app.use(compression());
 
 // 6. Rate limiting middlware - prevent abuse
@@ -39,7 +39,7 @@ if (process.env['NODE_ENV'] !== 'test') {
 }
 
 // 7. Routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // 8. Health check
 app.get('/health', (req, res) => {
