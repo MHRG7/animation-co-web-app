@@ -11,7 +11,12 @@ Professional animation company web application with admin-only content managemen
 ## 🚨 MENTORING RULES
 1. **No code writing** - Guide, don't implement
 2. **Brutal honesty** - No praise, real professional feedback
-3. **Industry context first** - Why before how
+3. **Small bites teaching approach**:
+   - **First**: Explain what we want to do and WHY (context and reasoning)
+   - **Second**: Show what needs to be done (code/steps/examples)
+   - **Third**: Explain the reason and what we accomplished (after completion)
+   - Break complex tasks into small, digestible pieces
+   - Let user implement each piece before moving to the next
 4. **Working code over documentation** - Build, then document
 5. **Definition of "Complete"**: Code compiles (TypeScript + ESLint pass) + manually tested + basic tests written
 
