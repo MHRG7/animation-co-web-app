@@ -104,9 +104,16 @@ Professional animation company web application with admin-only content managemen
   - ✅ Login, register, logout mutations with React Query
   - ✅ Global auth state accessible throughout app
 - **API Integration**: Axios client with interceptors
-  - ✅ Request interceptor: Attaches Authorization header from localStorage
-  - ✅ Response interceptor: Handles 401 errors (token expiration)
+  - ✅ Request interceptor: Attaches Authorization header from token getter
+  - ✅ Response interceptor: Handles 401 errors with automatic token refresh
   - ✅ BaseURL configured to /api (proxied to backend)
+- **Hybrid Token Storage**: Access token in memory, refresh in localStorage
+  - ✅ Access token stored in React state (immune to XSS)
+  - ✅ Refresh token stored in localStorage (persists across sessions)
+  - ✅ Token getter/setter pattern bridges React and axios
+  - ✅ Auto-refresh on mount restores session after page reload
+  - ✅ No flash of unauthenticated content (isRefreshing state)
+  - ✅ Users stay logged in for 7 days (refresh token expiry)
 
 ### ⚠️ Known Technical Debt (Non-blocking)
 
@@ -116,11 +123,10 @@ Professional animation company web application with admin-only content managemen
    - Missing connection pool configuration
    - **Impact**: Low - can be addressed in Phase 2 or later
 
-2. **Frontend Token Refresh Not Implemented**
-   - axios response interceptor has TODO comment for 401 handling
-   - Access token expires after 15 minutes, no automatic refresh
-   - Users must login again after token expiry
-   - **Impact**: Medium - affects UX, should be addressed before Phase 2
+2. **No CSP Headers**
+   - Content Security Policy not configured
+   - XSS protection relies solely on hybrid token storage
+   - **Impact**: Medium - should add before production
 
 3. **No Frontend Tests**
    - Backend has 20 integration tests, frontend has none
@@ -582,6 +588,48 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
+**Commit 10: Automatic Token Refresh**
+```bash
+git commit -m "feat: Implement automatic token refresh on frontend
+
+- Add refreshAccessToken() function to call /api/auth/refresh
+- Update axios response interceptor to handle 401 errors
+- Auto-refresh access token when expired, retry original request
+- Logout user only if refresh token is invalid/expired
+- Use Vite proxy (/api) to avoid CORS issues
+
+Fixes: Users no longer logged out every 15 minutes
+Testing: Manually verified with JWT_EXPIRES_IN=30s
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+**Why**: Users no longer forcibly logged out every 15 minutes. Seamless UX.
+
+---
+
+**Commit 11: Hybrid Token Storage**
+```bash
+git commit -m "feat: Implement hybrid token storage (access in memory, refresh in localStorage)
+
+- Store access token in React state (memory only, immune to XSS)
+- Store refresh token in localStorage (persists across sessions)
+- Implement token getter/setter pattern for axios-React bridge
+- Auto-refresh on mount to restore session after page reload
+- Fix race condition with queryKey and enabled flag
+- Add isRefreshing state to prevent flash of unauthenticated content
+- Move RefreshTokenResponse to shared types
+
+Security: Access tokens no longer stored in localStorage (XSS protection)
+UX: Users stay logged in after page refresh (7 day session)
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+**Why**: Significant security improvement - access tokens can't be stolen via XSS attacks.
+
+---
+
 ### Key Learnings from Phase 1D:
 
 1. **Tailwind CSS v4 Architecture Change**:
@@ -665,6 +713,53 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     - Order matters: cheapest/safest checks first
     - Example: `if (user && user.role === 'ADMIN')` - checks user exists before accessing role
     - Prevents null/undefined access errors
+
+---
+
+## 🎯 Wave 1 Security Progress (66% Complete)
+
+**Completed:**
+- ✅ Automatic token refresh (Commit 10)
+- ✅ Hybrid token storage (Commit 11)
+
+**Remaining:**
+- ❌ CSP headers (next task - 1-2 hours)
+- ⏸️ Token rotation (optional, advanced security)
+
+### Key Learnings (Hybrid Storage):
+
+1. **Token Getter/Setter Pattern**:
+   - Store function reference, not value
+   - Bridges non-React code (axios) with React state
+   - `() => accessToken` always returns current value
+   - Used by Auth0, AWS Amplify, Firebase
+
+2. **React Query Dependencies**:
+   - queryKey must include all dependencies: `queryKey: ['user', accessToken]`
+   - `enabled` flag controls when query runs: `enabled: !!accessToken`
+   - Prevents race conditions on mount
+
+3. **Loading State Management**:
+   - Separate `isRefreshing` for initial auth check
+   - Combine with React Query `isLoading`
+   - Prevents flash of unauthenticated content
+
+4. **Optional Chaining with Function Calls**:
+   - `tokenGetter?.()` = "if exists, call it"
+   - Prevents crashes when function is null
+   - Used when function might not be registered yet
+
+---
+
+## 📋 Next Steps
+
+**Immediate (Wave 1 completion):**
+1. **CSP Headers** (1-2 hours) - Prevent XSS at browser level
+2. **Frontend Tests** (4-6 hours) - Test auth flows
+
+**Then (Phase 2):**
+1. Role-based authorization middleware
+2. Content management CRUD endpoints
 
 ---
 
