@@ -39,6 +39,10 @@ export interface RegisterResponse {
   user: User;
 }
 
+export interface RefreshTokenResponse {
+  accessToken: string;
+}
+
 // Error response from backend
 export interface ApiError {
   message: string;

@@ -1,8 +1,19 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import type { RefreshTokenResponse } from '@/types/auth';
 
-interface RefreshTokenResponse {
-  accessToken: string;
-}
+// Store a getter function that returns the current access token
+let tokenGetter: (() => string | null) | null = null;
+let tokenSetter: ((token: string | null) => void) | null;
+
+export const setTokenGetter = (getter: () => string | null): void => {
+  tokenGetter = getter;
+};
+
+export const setTokenSetter = (
+  setter: (token: string | null) => void
+): void => {
+  tokenSetter = setter;
+};
 
 export const apiClient = axios.create({
   baseURL: '/api', // Proxied to http://localhost:3001/api
@@ -15,7 +26,7 @@ export const apiClient = axios.create({
 // Response interceptor (automatically attach token to requests)
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = tokenGetter?.();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -54,15 +65,14 @@ apiClient.interceptors.response.use(
         // Get new access token
         const newAccessToken = await refreshAccessToken();
 
-        // Update stored token
-        localStorage.setItem('accessToken', newAccessToken);
+        // Update React state via the setter
+        tokenSetter?.(newAccessToken);
 
         // Retry the original request with new token
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return await apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(refreshError as Error);

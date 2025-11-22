@@ -1,12 +1,13 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { apiClient, setTokenGetter, setTokenSetter } from '@/lib/axios';
 import type {
   User,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  RefreshTokenResponse,
 } from '@/types/auth';
 
 interface AuthContextType {
@@ -21,20 +22,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper functions for token storage
-const getAccessToken = (): string | null => localStorage.getItem('accessToken');
 const getRefreshToken = (): string | null =>
   localStorage.getItem('refreshToken');
 
-const setTokens = (accessToken: string, refreshToken: string): void => {
-  localStorage.setItem('accessToken', accessToken);
+const setRefreshTokensStorage = (refreshToken: string): void => {
   localStorage.setItem('refreshToken', refreshToken);
 };
 
-const clearTokens = (): void => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-};
-
+// Auth Provider
 export function AuthProvider({
   children,
 }: {
@@ -42,12 +37,14 @@ export function AuthProvider({
 }): React.JSX.Element {
   const queryClient = useQueryClient();
 
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(true);
+
   // Fetch current user (if token exists)
   const { data: user, isLoading } = useQuery({
-    queryKey: ['user'],
+    queryKey: ['user', accessToken],
     queryFn: async () => {
-      const token = getAccessToken();
-      if (!token) {
+      if (!accessToken) {
         return null;
       }
 
@@ -55,8 +52,50 @@ export function AuthProvider({
       return response.data.user;
     },
     retry: false, // Don't retry if 401 (invalid token)
+    enabled: !!accessToken,
   });
 
+  // On mount, check if we have refresh token and get access token
+  useEffect(() => {
+    const refreshToken = getRefreshToken();
+
+    if (!refreshToken) {
+      setIsRefreshing(false);
+      return;
+    }
+
+    // Auto-refresh on mount to get access token
+    const fetchAccessToken = async (): Promise<void> => {
+      try {
+        const response = await apiClient.post<RefreshTokenResponse>(
+          '/auth/refresh',
+          { refreshToken }
+        );
+        setAccessToken(response.data.accessToken);
+      } catch {
+        // Refresh failed, clear invalid refresh token
+        localStorage.removeItem('refreshToken');
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+
+    void fetchAccessToken();
+  }, []);
+
+  // Tell axios how to get the current access token
+  useEffect(() => {
+    setTokenGetter(() => accessToken);
+    setTokenSetter(setAccessToken);
+  }, [accessToken]);
+
+  // Helper to clear all tokens
+  const clearTokens = (): void => {
+    setAccessToken(null);
+    localStorage.removeItem('refreshToken');
+  };
+
+  // Login
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginRequest) => {
       const response = await apiClient.post<LoginResponse>(
@@ -66,7 +105,8 @@ export function AuthProvider({
       return response.data;
     },
     onSuccess: data => {
-      setTokens(data.accessToken, data.refreshToken);
+      setAccessToken(data.accessToken);
+      setRefreshTokensStorage(data.refreshToken);
       queryClient.setQueryData(['user'], data.user); // Update cache
     },
   });
@@ -75,6 +115,7 @@ export function AuthProvider({
     await loginMutation.mutateAsync(credentials);
   };
 
+  // Register
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterRequest) => {
       const response = await apiClient.post<RegisterResponse>(
@@ -90,6 +131,7 @@ export function AuthProvider({
     // After registration, user needs to login
   };
 
+  // Logout
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const refreshToken = getRefreshToken();
@@ -108,9 +150,10 @@ export function AuthProvider({
     await logoutMutation.mutateAsync();
   };
 
+  // Return value
   const value: AuthContextType = {
     user: user ?? null,
-    isLoading,
+    isLoading: isLoading || isRefreshing,
     isAuthenticated: !!user,
     login,
     register,
