@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { rateLimiterMiddleware } from './middleware/rateLimiter.js';
 import authRoutes from './routes/auth.js';
+import { securityConfig } from './config/security.js';
 
 const app: Express = express();
 
@@ -13,7 +14,7 @@ const app: Express = express();
 app.set('trust proxy', 1);
 
 // 1. Security headers - ALWAYS FIRST
-app.use(helmet());
+app.use(helmet(securityConfig));
 
 // 2. Logging
 app.use(morgan('dev'));
