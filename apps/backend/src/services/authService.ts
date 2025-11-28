@@ -1,16 +1,21 @@
 import bcrypt from 'bcryptjs';
 import getPrisma from '../lib/prisma.js';
 import { env } from '../config/env.js';
-import type { RegisterInput, LoginInput } from '../schemas/auth.schema.js';
+import type { RegisterRequest, LoginRequest } from '@animation-co/shared-types';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import { JWTPayload } from '../types/auth.js';
 
+/**
+ * Internal service layer types (database representation)
+ * These use Date object - routes will convert to string for JSON
+ */
 interface RegisterResult {
   id: string;
   email: string;
   role: UserRole;
   createdAt: Date;
+  isActive: boolean;
 }
 
 interface LoginResult {
@@ -20,11 +25,13 @@ interface LoginResult {
     id: string;
     email: string;
     role: UserRole;
+    isActive: boolean;
+    createdAt: Date;
   };
 }
 
 // Register user service
-export async function register(data: RegisterInput): Promise<RegisterResult> {
+export async function register(data: RegisterRequest): Promise<RegisterResult> {
   const prisma = getPrisma();
 
   const { email, password, role } = data;
@@ -39,14 +46,20 @@ export async function register(data: RegisterInput): Promise<RegisterResult> {
       password: hashedPassword,
       role,
     },
-    select: { id: true, email: true, role: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      isActive: true,
+    },
   });
 
   return user;
 }
 
 // Login user service
-export async function login(data: LoginInput): Promise<LoginResult> {
+export async function login(data: LoginRequest): Promise<LoginResult> {
   const prisma = getPrisma();
 
   const { email, password } = data;
@@ -59,6 +72,7 @@ export async function login(data: LoginInput): Promise<LoginResult> {
       password: true,
       role: true,
       isActive: true,
+      createdAt: true,
     },
   });
 
@@ -105,6 +119,8 @@ export async function login(data: LoginInput): Promise<LoginResult> {
       id: user.id,
       email: user.email,
       role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
     },
   };
 }

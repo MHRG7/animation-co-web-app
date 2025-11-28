@@ -21,6 +21,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
+    "@animation-co/shared-types": "workspace:*",
     "@prisma/client": "^6",
     "bcryptjs": "^3",
     "compression": "^1",

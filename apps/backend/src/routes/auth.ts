@@ -2,14 +2,16 @@ import { Router, Request, Response } from 'express';
 import { validate } from '../middleware/validation.js';
 import {
   registerSchema,
-  RegisterInput,
   loginSchema,
-  LoginInput,
   refreshSchema,
-  RefreshInput,
   logoutSchema,
-  LogoutInput,
-} from '../schemas/auth.schema.js';
+  type RegisterRequest,
+  type LoginRequest,
+  type RefreshRequest,
+  type LogoutRequest,
+  type RegisterResponse,
+  type LoginResponse,
+} from '@animation-co/shared-types';
 import logger from '../lib/logger.js';
 import {
   login,
@@ -17,6 +19,7 @@ import {
   register,
   logout,
 } from '../services/authService.js';
+import { toApiUser } from '../utils/typeConverters.js';
 import { authenticateJWT } from '../middleware/authenticate.js';
 
 const router: Router = Router();
@@ -26,14 +29,20 @@ const router: Router = Router();
 router.post(
   '/register',
   validate(registerSchema),
-  async (req: Request<unknown, unknown, RegisterInput>, res: Response) => {
+  async (req: Request<unknown, unknown, RegisterRequest>, res: Response) => {
     try {
       const user = await register(req.body);
-      return res.status(201).json({ user });
+
+      // Conver service result (Prisma types) to API response (shared types)
+      const response: RegisterResponse = {
+        user: toApiUser(user),
+      };
+
+      return res.status(201).json(response);
     } catch (error) {
       logger.error('Registration error:', { error });
 
-      // Modern type guard
+      // Prisma unique constrant violation (duplicate email)
       if (
         typeof error === 'object' &&
         error !== null &&
@@ -52,10 +61,18 @@ router.post(
 router.post(
   '/login',
   validate(loginSchema),
-  async (req: Request<unknown, unknown, LoginInput>, res: Response) => {
+  async (req: Request<unknown, unknown, LoginRequest>, res: Response) => {
     try {
       const result = await login(req.body);
-      return res.status(200).json(result);
+
+      // Convert Prisma types to API types
+      const response: LoginResponse = {
+        user: toApiUser(result.user),
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      };
+
+      return res.status(200).json(response);
     } catch (error) {
       logger.error('Login error:', { error });
 
@@ -69,7 +86,7 @@ router.post(
 router.post(
   '/refresh',
   validate(refreshSchema),
-  async (req: Request<unknown, unknown, RefreshInput>, res: Response) => {
+  async (req: Request<unknown, unknown, RefreshRequest>, res: Response) => {
     try {
       const { accessToken } = await refreshAccessToken(req.body.refreshToken);
       return res.status(200).json({ accessToken });
@@ -86,7 +103,7 @@ router.post(
 router.post(
   '/logout',
   validate(logoutSchema),
-  async (req: Request<unknown, unknown, LogoutInput>, res: Response) => {
+  async (req: Request<unknown, unknown, LogoutRequest>, res: Response) => {
     try {
       await logout(req.body.refreshToken);
 

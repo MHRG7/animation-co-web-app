@@ -1,0 +1,34 @@
+{
+  "name": "@animation-co/shared-types",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared TypeScript types and Zod schemas for frontend and backend",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "rimraf": "^6"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "validation",
+    "zod",
+    "shared"
+  ]
+}

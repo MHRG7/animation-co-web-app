@@ -6,10 +6,9 @@
   "description": "Professional animation company web application with portfolio management",
   "scripts": {
     "dev": "pnpm --parallel --recursive dev",
-    "build": "pnpm --recursive build",
-    "test": "pnpm --recursive test",
+    "build": "pnpm --filter @animation-co/shared-types build && pnpm --filter \"./apps/*\" build",
     "lint": "pnpm --recursive lint",
-    "typecheck": "pnpm --recursive typecheck",
+    "typecheck": "pnpm --filter @animation-co/shared-types build && pnpm --recursive typecheck",
     "clean": "pnpm --recursive clean",
     "backend:dev": "pnpm --filter ./apps/backend dev",
     "frontend:dev": "pnpm --filter ./apps/frontend dev",

@@ -4,26 +4,11 @@ import app from '../../src/app.js';
 import { resetTestDatabase, disconnectDatabase } from '../helpers/testDb.js';
 import jwt from 'jsonwebtoken';
 import { env } from '../../src/config/env.js';
-
-//Type definitions for API responses
-interface RegisterSuccessResponse {
-  user: {
-    id: string;
-    email: string;
-    role: string;
-    createdAt: string;
-  };
-}
-
-interface LoginSuccessResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+import type {
+  RegisterResponse,
+  LoginResponse,
+  RefreshTokenResponse,
+} from '@animation-co/shared-types';
 
 interface MeResponse {
   user: {
@@ -36,10 +21,6 @@ interface MeResponse {
 interface ErrorResponse {
   error: string;
   details?: { field: string; message: string }[];
-}
-
-interface RefreshResponse {
-  accessToken: string;
 }
 
 // Run once before all tests in this file - schema setup (slow)
@@ -68,7 +49,7 @@ describe('POST /api/auth/register', () => {
     // Assert response status
     expect(response.status).toBe(201);
 
-    const body = response.body as RegisterSuccessResponse;
+    const body = response.body as RegisterResponse;
     // Assert response body structure
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
@@ -128,7 +109,7 @@ describe('POST /api/auth/login', () => {
     });
 
     // Assert response
-    const body = loginResponse.body as LoginSuccessResponse;
+    const body = loginResponse.body as LoginResponse;
 
     expect(loginResponse.status).toBe(200);
     expect(body).toHaveProperty('accessToken');
@@ -216,7 +197,7 @@ describe('GET /api/auth/me', () => {
       password: registerData.password,
     });
 
-    const { accessToken } = loginResponse.body as LoginSuccessResponse;
+    const { accessToken } = loginResponse.body as LoginResponse;
 
     // Use token to access protected route
     const meResponse = await request(app)
@@ -297,14 +278,14 @@ describe('POST /api/auth/refresh', () => {
       password: registerData.password,
     });
 
-    const { refreshToken } = loginResponse.body as LoginSuccessResponse;
+    const { refreshToken } = loginResponse.body as LoginResponse;
 
     // Use refresh token to get new access token
     const refreshResponse = await request(app)
       .post('/api/auth/refresh')
       .send({ refreshToken });
 
-    const refreshBody = refreshResponse.body as RefreshResponse;
+    const refreshBody = refreshResponse.body as RefreshTokenResponse;
     // Assert response
     expect(refreshResponse.status).toBe(200);
     expect(refreshBody).toHaveProperty('accessToken');
@@ -372,7 +353,7 @@ describe('POST /api/auth/logout', () => {
       password: registerData.password,
     });
 
-    const { refreshToken } = loginResponse.body as LoginSuccessResponse;
+    const { refreshToken } = loginResponse.body as LoginResponse;
 
     // Logout with refresh token
     const logoutResponse = await request(app)
