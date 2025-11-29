@@ -32,10 +32,10 @@ Professional animation company web application with admin-only content managemen
 
 ## 📊 CURRENT STATUS
 
-**Last Review**: November 28, 2025
+**Last Review**: November 29, 2025
 **Build Status**: ✅ Compiles (TypeScript + ESLint pass) - Backend + Frontend
 **Test Status**: ✅ 20/20 backend integration tests passing
-**Completion**: ✅ **Phase 1E: COMPLETE - Shared Types Package with Zod Validation**
+**Completion**: ✅ **Phase 1F: COMPLETE - Frontend Migration to Shared Types**
 
 ### ✅ What's Working
 - **TypeScript/ESLint**: Code compiles cleanly, no errors
@@ -134,8 +134,11 @@ Professional animation company web application with admin-only content managemen
   - ✅ Request/Response types for API contract
   - ✅ Type converter pattern (toApiUser helper)
   - ✅ Backend fully migrated to shared types
+  - ✅ Frontend fully migrated to shared types
   - ✅ Build order dependencies configured
   - ✅ Single source of truth for API contract
+  - ✅ Input/Output type separation (z.input vs z.output)
+  - ✅ Validation middleware applies Zod transformations
 
 ### ⚠️ Known Technical Debt (Non-blocking)
 
@@ -904,6 +907,126 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
+## 🧠 Phase 1F Completion Criteria
+
+All requirements met - Frontend migration to shared types complete:
+
+- ✅ Code compiles (`pnpm typecheck` passes) - **DONE**
+- ✅ Linting passes (`pnpm lint` passes) - **DONE**
+- ✅ **Frontend dependency added** (@animation-co/shared-types) - **DONE**
+- ✅ **useAuth.tsx migrated** (imports from shared-types) - **DONE**
+- ✅ **axios.ts migrated** (imports from shared-types) - **DONE**
+- ✅ **Local types deleted** (apps/frontend/src/types/auth.ts) - **DONE**
+- ✅ **Input/Output types separated** (z.input vs z.output) - **DONE**
+- ✅ **Validation middleware fixed** (applies transformations) - **DONE**
+- ✅ **All 20 tests passing** (backend integration tests) - **DONE**
+
+**Phase 1F: 9/9 complete (100%)**
+
+---
+
+## 🔄 Development Workflow (Phase 1F)
+
+**Pattern Used**: Implement → Lint/Typecheck → Test → Commit → Repeat
+
+### Commits Made During Phase 1F:
+
+**Commit 14: Frontend Migration to Shared Types**
+```bash
+git commit -m "refactor: Migrate frontend to shared types package
+
+- Add @animation-co/shared-types dependency to frontend package.json
+- Update useAuth.tsx to import types from shared-types
+- Update axios.ts to import RefreshTokenResponse from shared-types
+- Delete local types file (apps/frontend/src/types/auth.ts)
+- Separate input/output types in shared-types:
+  * RegisterRequest = z.input (frontend - role optional)
+  * RegisterData = z.output (backend - role has default)
+- Fix validation middleware to apply Zod transformations
+  * Change await schema.parseAsync(req.body) to req.body = await...
+  * Ensures lowercase, trim, and default transformations apply
+- Update backend routes to use RegisterData output type
+- Fix ESLint to ignore **/dist/ folders (not just top-level)
+
+Key Learnings:
+- Zod does both validation AND transformation
+- z.input = type before validation (what clients send)
+- z.output = type after validation (what services receive)
+- Middleware execution order matters (validation → routes)
+- z.enum() in Zod v4 handles both literals and TS enums
+
+Benefits:
+- Frontend and backend use exact same types
+- Single source of truth for API contract
+- Type mismatches caught at compile time
+- No duplicate type definitions
+
+All 20 backend tests passing ✅
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+**Why**: Completes the shared types migration - frontend and backend now share exact same type definitions.
+
+---
+
+### Key Learnings from Phase 1F:
+
+1. **Zod's Dual Role (Validation + Transformation)**:
+   - User originally thought: "Zod only checks types and values"
+   - Reality: Zod both validates AND transforms data
+   - Transformations: `.toLowerCase()`, `.trim()`, `.default()`, etc.
+   - Example: `z.email().toLowerCase().trim()` converts "USER@EXAMPLE.COM " to "user@example.com"
+   - Validation middleware must assign result: `req.body = await schema.parseAsync(req.body)`
+
+2. **Input vs Output Types**:
+   - `z.input<typeof schema>`: Type BEFORE validation/transformation (what clients send)
+   - `z.output<typeof schema>`: Type AFTER validation/transformation (what services receive)
+   - Example: `role` field is optional in input, but has default value in output
+   - Frontend uses input types (RegisterRequest with optional role)
+   - Backend uses output types (RegisterData with guaranteed role value)
+   - Middleware bridges the gap by applying transformations
+
+3. **Middleware Execution Order**:
+   - Request flow: Client → Middleware → Route Handler
+   - Validation middleware runs BEFORE route handler
+   - Middleware transforms req.body using Zod schema
+   - Route handler receives transformed data (output type)
+   - Therefore: Route handlers should type req.body as OUTPUT type, not input type
+
+4. **Zod v4 API Deprecation**:
+   - `z.nativeEnum()` is deprecated in Zod v4
+   - `z.enum()` now handles both string literals AND TypeScript enums
+   - User's IDE was correct - Claude initially gave outdated advice
+   - Always verify library documentation when APIs seem wrong
+
+5. **ESLint Glob Patterns**:
+   - Pattern `dist/` only matches top-level dist folder
+   - Pattern `**/dist/` matches dist folders anywhere in directory tree
+   - `**` = match zero or more directories
+   - Critical for monorepos with nested packages
+
+6. **Git Staging Commands**:
+   - `git add -A`: Stage all changes (new, modified, deleted files)
+   - `git add .`: Stage new and modified files in current directory
+   - `git add <file>`: Stage specific file
+   - `-A` is useful for comprehensive commits across multiple directories
+
+7. **Type Safety Across Monorepo**:
+   - Workspace dependencies (`workspace:*`) enable type sharing
+   - Frontend and backend import from same package
+   - TypeScript catches type mismatches at compile time
+   - Changes to shared-types affect all consumers immediately
+
+8. **DRY Principle Recognition**:
+   - User identified violation: "it seems wrong a little, because we designed the shared types so we do not repeat ourself"
+   - Recognizing code smell is critical skill
+   - Question everything that feels duplicative or manual
+   - Good developers feel discomfort when violating DRY
+
+---
+
 ## 🎯 Wave 1 Security Progress (100% Complete)
 
 **Completed:**
@@ -989,11 +1112,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 **Recently Completed:**
 - ✅ **Shared Types Package** (Phase 1E) - Monorepo-wide type safety with Zod validation
+- ✅ **Frontend Migration to Shared Types** (Phase 1F) - Eliminated duplicate types, single source of truth
 
 **Immediate (Optional Improvements):**
-1. **Frontend Migration to Shared Types** (2-3 hours) - Migrate frontend to use @animation-co/shared-types
-2. **Frontend Tests** (4-6 hours) - Test auth flows with React Testing Library
-3. **CSP Nonce-Based Approach** (2-3 hours) - Upgrade from 90% to 95% XSS protection
+1. **Frontend Tests** (4-6 hours) - Test auth flows with React Testing Library
+2. **CSP Nonce-Based Approach** (2-3 hours) - Upgrade from 90% to 95% XSS protection
+3. **Prisma Singleton Improvements** (1-2 hours) - Graceful shutdown, query logging, connection pooling
 
 **Phase 2 (Content Management API):**
 1. Role-based authorization middleware
