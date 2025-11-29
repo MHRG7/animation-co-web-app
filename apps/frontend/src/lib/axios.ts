@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import type { RefreshTokenResponse } from '@/types/auth';
+import type { RefreshTokenResponse } from '@animation-co/shared-types';
 
 // Store a getter function that returns the current access token
 let tokenGetter: (() => string | null) | null = null;

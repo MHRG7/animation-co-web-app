@@ -9,7 +9,7 @@ export const validate = (schema: z.ZodType) => {
   ): Promise<void> => {
     try {
       // Validate and transform req.body (Express 5 handles async errors)
-      await schema.parseAsync(req.body);
+      req.body = await schema.parseAsync(req.body);
       next();
     } catch (error) {
       if (error instanceof ZodError) {

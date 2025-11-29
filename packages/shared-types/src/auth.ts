@@ -53,13 +53,17 @@ export const logoutSchema = z.object({
 });
 
 // ============================================================================
-// TypeScript Types (inferred from Zod schemas - DRY principle)
+// TypeScript Types (infered from Zod schemas - DRY principle)
 // ============================================================================
 
-export type RegisterRequest = z.infer<typeof registerSchema>;
-export type LoginRequest = z.infer<typeof loginSchema>;
-export type RefreshRequest = z.infer<typeof refreshSchema>;
-export type LogoutRequest = z.infer<typeof logoutSchema>;
+// Input types(what client send - before validation)
+export type RegisterRequest = z.input<typeof registerSchema>;
+export type LoginRequest = z.input<typeof loginSchema>;
+export type RefreshRequest = z.input<typeof refreshSchema>;
+export type LogoutRequest = z.input<typeof logoutSchema>;
+
+// Output types (what services recive - after validation & defaults)
+export type RegisterData = z.output<typeof registerSchema>;
 
 // ============================================================================
 // API Response Types (not validated by Zod, just TypeScript interfaces)

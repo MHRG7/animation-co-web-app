@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import getPrisma from '../lib/prisma.js';
 import { env } from '../config/env.js';
-import type { RegisterRequest, LoginRequest } from '@animation-co/shared-types';
+import type { LoginRequest, RegisterData } from '@animation-co/shared-types';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import { JWTPayload } from '../types/auth.js';
@@ -31,7 +31,7 @@ interface LoginResult {
 }
 
 // Register user service
-export async function register(data: RegisterRequest): Promise<RegisterResult> {
+export async function register(data: RegisterData): Promise<RegisterResult> {
   const prisma = getPrisma();
 
   const { email, password, role } = data;

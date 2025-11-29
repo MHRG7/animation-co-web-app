@@ -5,7 +5,7 @@ import {
   loginSchema,
   refreshSchema,
   logoutSchema,
-  type RegisterRequest,
+  type RegisterData,
   type LoginRequest,
   type RefreshRequest,
   type LogoutRequest,
@@ -29,7 +29,7 @@ const router: Router = Router();
 router.post(
   '/register',
   validate(registerSchema),
-  async (req: Request<unknown, unknown, RegisterRequest>, res: Response) => {
+  async (req: Request<unknown, unknown, RegisterData>, res: Response) => {
     try {
       const user = await register(req.body);
 

@@ -6,14 +6,14 @@ import globals from 'globals';
 export default typescript.config(
   {
     ignores: [
-      'dist/',
+      '**/dist/',
       'build/',
       'node_modules/',
       '*.config.js',
       '*.config.ts',
       '.eslintrc.js',
       'coverage/',
-      '**/*.d.ts'
+      '**/*.d.ts',
     ],
   },
   js.configs.recommended,
@@ -33,7 +33,10 @@ export default typescript.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
@@ -43,8 +46,8 @@ export default typescript.config(
       '@typescript-eslint/no-confusing-void-expression': 'error',
       '@typescript-eslint/prefer-readonly': 'error',
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
       'prefer-const': 'error',
       'no-var': 'error',
     },
@@ -63,7 +66,11 @@ export default typescript.config(
     },
   },
   {
-    files: ['apps/frontend/**/*.ts', 'apps/frontend/**/*.tsx', 'packages/ui-components/**/*.tsx'],
+    files: [
+      'apps/frontend/**/*.ts',
+      'apps/frontend/**/*.tsx',
+      'packages/ui-components/**/*.tsx',
+    ],
     languageOptions: {
       globals: {
         ...globals.browser,

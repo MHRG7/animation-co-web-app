@@ -8,7 +8,8 @@ import type {
   RegisterRequest,
   RegisterResponse,
   RefreshTokenResponse,
-} from '@/types/auth';
+  MeResponse,
+} from '@animation-co/shared-types';
 
 interface AuthContextType {
   user: User | null;
@@ -48,7 +49,7 @@ export function AuthProvider({
         return null;
       }
 
-      const response = await apiClient.get<{ user: User }>('/auth/me');
+      const response = await apiClient.get<MeResponse>('/auth/me');
       return response.data.user;
     },
     retry: false, // Don't retry if 401 (invalid token)
