@@ -23,6 +23,6 @@
     },
     "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["src/**/*", "src/**/*.tsx", "tests/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "src/**/*.tsx", "tests/**/*", "*.config.ts"],
   "exclude": ["node_modules", "dist", "build"]
 }

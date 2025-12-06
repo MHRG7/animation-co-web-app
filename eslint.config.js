@@ -11,6 +11,8 @@ export default typescript.config(
       'node_modules/',
       '*.config.js',
       '*.config.ts',
+      '**/*.config.js',
+      '**/*.config.ts',
       '.eslintrc.js',
       'coverage/',
       '**/*.d.ts',
