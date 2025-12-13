@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { registerSchema } from '@animation-co/shared-types';
 
 export function RegisterPage(): React.JSX.Element {
   // Form state
@@ -24,6 +25,15 @@ export function RegisterPage(): React.JSX.Element {
     // Validate password match
     if (password !== confirmPassword) {
       setError('Password do not match');
+      return;
+    }
+
+    // Client-side Zod validation
+    const validation = registerSchema.safeParse({ email, password });
+
+    if (!validation.success) {
+      // Extract first error message from Zod
+      setError(validation.error.issues[0]?.message ?? 'Validation failed');
       return; // Stop submission
     }
 
@@ -39,9 +49,12 @@ export function RegisterPage(): React.JSX.Element {
         void navigate('/login');
       }, 2000); // Wait 2 seconds before redirect
     } catch (err) {
-      // Failed - show error
-      if (err instanceof Error) {
-        setError(err.message || 'Registration failed');
+      // Check if it's an axios error with response data
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response: { data: { error?: string } } };
+        setError(axiosError.response.data.error ?? 'Registration failed');
+      } else if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError('Registration failed. please try again.');
       }

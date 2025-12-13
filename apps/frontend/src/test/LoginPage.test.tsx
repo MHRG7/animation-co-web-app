@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { LoginPage } from '@/pages/LoginPage';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { BrowserRouter, NavigateFunction } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
 import { UserRole } from '@animation-co/shared-types';
@@ -24,7 +24,7 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
+    useNavigate: (): NavigateFunction => mockNavigate,
   };
 });
 
@@ -319,24 +319,22 @@ describe('LoginPage', () => {
     const user = userEvent.setup();
 
     const loginButton = screen.getByRole('button', { name: /login/i });
-    const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
-    const passwordInput = screen.getByLabelText(
-      /password/i
-    ) as HTMLInputElement;
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
 
     // Try to submit empty form
     await user.click(loginButton);
 
     // ASSERT: From should be invalid (HTML5 validation)
-    expect(emailInput.validity.valid).toBe(false);
-    expect(passwordInput.validity.valid).toBe(false);
+    expect((emailInput as HTMLInputElement).validity.valid).toBe(false);
+    expect((passwordInput as HTMLInputElement).validity.valid).toBe(false);
 
     // Now fill only email (password still empty)
     await user.type(emailInput, 'test@example.com');
     await user.click(loginButton);
 
     // Email should be valid now, password still invalid
-    expect(emailInput.validity.valid).toBe(true);
-    expect(passwordInput.validity.valid).toBe(false);
+    expect((emailInput as HTMLInputElement).validity.valid).toBe(true);
+    expect((passwordInput as HTMLInputElement).validity.valid).toBe(false);
   });
 });
