@@ -96,7 +96,7 @@ export function AuthProvider({
     localStorage.removeItem('refreshToken');
   };
 
-  // Login
+  // __________ Login mutation __________
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginRequest) => {
       const response = await apiClient.post<LoginResponse>(
@@ -116,7 +116,7 @@ export function AuthProvider({
     await loginMutation.mutateAsync(credentials);
   };
 
-  // Register
+  // __________ Register mutation __________
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterRequest) => {
       const response = await apiClient.post<RegisterResponse>(
@@ -132,7 +132,7 @@ export function AuthProvider({
     // After registration, user needs to login
   };
 
-  // Logout
+  // __________ Logout mutation __________
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const refreshToken = getRefreshToken();

@@ -55,6 +55,7 @@ describe('LoginPage', () => {
     mockNavigate.mockClear();
   });
 
+  // __________ Login successfully __________
   it('should login successfully with valid credentials', async () => {
     // ARRANGE: Import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -106,6 +107,7 @@ describe('LoginPage', () => {
     expect(localStorage.getItem('refreshToken')).toBe('mock-refresh-token');
   });
 
+  // __________ Show login error __________
   it('should show error message when login fails', async () => {
     // ARRANGE: Import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -136,6 +138,7 @@ describe('LoginPage', () => {
     expect(errorMessage).toBeInTheDocument();
   });
 
+  // __________ Show loading state __________
   it('should show loading state during login', async () => {
     const { apiClient } = await import('@/lib/axios');
 
@@ -186,6 +189,7 @@ describe('LoginPage', () => {
     });
   });
 
+  // __________ Disable inputs __________
   it('should disable from inputs during login', async () => {
     const { apiClient } = await import('@/lib/axios');
 
@@ -233,6 +237,7 @@ describe('LoginPage', () => {
     });
   });
 
+  // __________ Register page link __________
   it('should have a link to register page', () => {
     renderLoginPage();
 
@@ -246,6 +251,7 @@ describe('LoginPage', () => {
     expect(registerLink).toHaveAttribute('href', '/register');
   });
 
+  // __________ After login navigation __________
   it('should navigate to dashboard after successful login', async () => {
     const { apiClient } = await import('@/lib/axios');
 
@@ -282,6 +288,7 @@ describe('LoginPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
 
+  // __________ Already authenticated - redirect __________
   it('should redirect to dashboard if already authenticated', async () => {
     // Import useAuth
     const useAuthModule = await import('@/hooks/useAuth');
@@ -313,6 +320,7 @@ describe('LoginPage', () => {
     spy.mockRestore();
   });
 
+  // __________ Required input fields __________
   it('should require email and password fields', async () => {
     renderLoginPage();
 

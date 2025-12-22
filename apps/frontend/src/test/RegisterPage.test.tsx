@@ -55,7 +55,7 @@ describe('RegisterPage', () => {
     mockNavigate.mockClear();
   });
 
-  // Successfully register ====================
+  // __________ Successfully register __________
   it('should register successfully with valid credentials', async () => {
     // ARRANGE: Import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -103,7 +103,7 @@ describe('RegisterPage', () => {
     expect(successMessage).toBeInTheDocument();
   });
 
-  // Password not match error ====================
+  // __________ Password not match error __________
   it('should show error when password do not match', async () => {
     // ARRANGE: import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -133,7 +133,7 @@ describe('RegisterPage', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  // Duplicate Email error ====================
+  // __________ Duplicate Email error __________
   it('should show error when email already exists', async () => {
     // ARRANGE: Mock API rejection with 409
     const mockErrorResponse = {
@@ -164,7 +164,7 @@ describe('RegisterPage', () => {
     expect(errorMessage).toBeInTheDocument();
   });
 
-  // Weak password validation (client-side Zod) ====================
+  // __________ Weak password validation (client-side Zod) __________
   it('should show error when password is too weak', async () => {
     // ARRANGE
     const { apiClient } = await import('@/lib/axios');
@@ -194,7 +194,7 @@ describe('RegisterPage', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  // Loading state during registration ====================
+  // __________ Loading state during registration __________
   it('should show loading state during registration', async () => {
     // ARRANGE
     const { apiClient } = await import('@/lib/axios');
@@ -250,7 +250,7 @@ describe('RegisterPage', () => {
     });
   });
 
-  // Login link navigation ====================
+  // __________ Login link navigation __________
   it('should have a link to login page', () => {
     renderRegisterPage();
 
@@ -264,7 +264,7 @@ describe('RegisterPage', () => {
     expect(loginLink).toHaveAttribute('href', '/login');
   });
 
-  // Already authenticated redirect ====================
+  // __________ Already authenticated redirect __________
   it('should redirect to dashboard if already authenticated', async () => {
     // ARRANGE: Import useAuth
     const useAuthModule = await import('@/hooks/useAuth');
