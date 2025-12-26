@@ -55,7 +55,6 @@ describe('RegisterPage', () => {
     mockNavigate.mockClear();
   });
 
-  // __________ Successfully register __________
   it('should register successfully with valid credentials', async () => {
     // ARRANGE: Import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -103,7 +102,6 @@ describe('RegisterPage', () => {
     expect(successMessage).toBeInTheDocument();
   });
 
-  // __________ Password not match error __________
   it('should show error when password do not match', async () => {
     // ARRANGE: import the mocked axios
     const { apiClient } = await import('@/lib/axios');
@@ -133,7 +131,6 @@ describe('RegisterPage', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  // __________ Duplicate Email error __________
   it('should show error when email already exists', async () => {
     // ARRANGE: Mock API rejection with 409
     const mockErrorResponse = {
@@ -164,7 +161,6 @@ describe('RegisterPage', () => {
     expect(errorMessage).toBeInTheDocument();
   });
 
-  // __________ Weak password validation (client-side Zod) __________
   it('should show error when password is too weak', async () => {
     // ARRANGE
     const { apiClient } = await import('@/lib/axios');
@@ -194,7 +190,6 @@ describe('RegisterPage', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
-  // __________ Loading state during registration __________
   it('should show loading state during registration', async () => {
     // ARRANGE
     const { apiClient } = await import('@/lib/axios');
@@ -250,7 +245,6 @@ describe('RegisterPage', () => {
     });
   });
 
-  // __________ Login link navigation __________
   it('should have a link to login page', () => {
     renderRegisterPage();
 
@@ -264,7 +258,6 @@ describe('RegisterPage', () => {
     expect(loginLink).toHaveAttribute('href', '/login');
   });
 
-  // __________ Already authenticated redirect __________
   it('should redirect to dashboard if already authenticated', async () => {
     // ARRANGE: Import useAuth
     const useAuthModule = await import('@/hooks/useAuth');
