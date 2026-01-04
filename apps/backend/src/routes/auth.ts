@@ -21,19 +21,23 @@ import {
 } from '../services/authService.js';
 import { toApiUser } from '../utils/typeConverters.js';
 import { authenticateJWT } from '../middleware/authenticate.js';
+import { requireRole } from '../middleware/authorize.js';
+import { UserRole } from '@prisma/client';
 
 const router: Router = Router();
 
 // POST / auth/register
-// NOTE: This endpoin will be admin-only protected later
+// NOTE: This endpoint will be admin-only protected later
 router.post(
   '/register',
+  authenticateJWT,
+  requireRole([UserRole.ADMIN]),
   validate(registerSchema),
   async (req: Request<unknown, unknown, RegisterData>, res: Response) => {
     try {
       const user = await register(req.body);
 
-      // Conver service result (Prisma types) to API response (shared types)
+      // Convert service result (Prisma types) to API response (shared types)
       const response: RegisterResponse = {
         user: toApiUser(user),
       };
@@ -42,7 +46,7 @@ router.post(
     } catch (error) {
       logger.error('Registration error:', { error });
 
-      // Prisma unique constrant violation (duplicate email)
+      // Prisma unique constraint violation (duplicate email)
       if (
         typeof error === 'object' &&
         error !== null &&

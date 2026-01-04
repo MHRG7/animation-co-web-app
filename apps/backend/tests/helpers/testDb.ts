@@ -1,33 +1,19 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import getPrisma from '../../src/lib/prisma.js';
-
-const execAsync = promisify(exec);
-let isSchemaInitialized = false;
+import getPrisma, { disconnectPrisma } from '../../src/lib/prisma.js';
 
 /**
- * Reset test database to clean state
- * Runs Prisma migrations and clears all data
+ * Clear data between tests
+ * Call this in beforeEach()
  */
-export async function resetTestDatabase(): Promise<void> {
-  // Set test database URL
-  process.env['DATABASE_URL'] = process.env['DATABASE_URL_TEST'];
-
-  if (!isSchemaInitialized) {
-    // Push Prisma schema to test database (creates tables if needed)
-    await execAsync('pnpm prisma db push --skip-generate --force-reset');
-    isSchemaInitialized = true;
-  }
-
-  // Clear all data (redundant with force-reset, but explicit)
+export async function clearTestDatabase(): Promise<void> {
   const prisma = getPrisma();
+  await prisma.refreshToken.deleteMany({});
   await prisma.user.deleteMany({});
 }
 
 /**
- * Disconnect Prisma after all tests
+ * Disconnect after all tests
+ * Call this in afterAll()
  */
 export async function disconnectDatabase(): Promise<void> {
-  const prisma = getPrisma();
-  await prisma.$disconnect();
+  await disconnectPrisma();
 }

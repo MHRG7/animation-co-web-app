@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app.js';
-import { resetTestDatabase, disconnectDatabase } from '../helpers/testDb.js';
+import { disconnectDatabase } from '../helpers/testDb.js';
 import jwt from 'jsonwebtoken';
 import { env } from '../../src/config/env.js';
 import type {
@@ -9,6 +9,11 @@ import type {
   LoginResponse,
   RefreshTokenResponse,
 } from '@animation-co/shared-types';
+import {
+  uniqueEmail,
+  testPassword,
+  createAdminAndGetToken,
+} from '../helpers/testHelpers.js';
 
 interface MeResponse {
   user: {
@@ -23,29 +28,25 @@ interface ErrorResponse {
   details?: { field: string; message: string }[];
 }
 
-// Run once before all tests in this file - schema setup (slow)
-beforeAll(async () => {
-  await resetTestDatabase();
-}, 30000);
-
-// Run before each test - just clear data (fast)
-beforeEach(async () => {
-  await resetTestDatabase();
-});
-
-// Run once after all tests complete
 afterAll(async () => {
   await disconnectDatabase();
 });
 
 describe('POST /api/auth/register', () => {
   it('should successfully register a new user with valid data', async () => {
-    const response = await request(app).post('/api/auth/register').send({
-      email: 'test@example.com',
-      password: 'Test1234!',
-      role: 'USER',
-    });
+    const adminToken = await createAdminAndGetToken(app);
 
+    const email = uniqueEmail('register-success');
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: testPassword(),
+      });
+
+    console.log('Register successful: ', response.body);
     // Assert response status
     expect(response.status).toBe(201);
 
@@ -53,7 +54,7 @@ describe('POST /api/auth/register', () => {
     // Assert response body structure
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
-    expect(body.user.email).toBe('test@example.com');
+    expect(body.user.email).toBe(email);
     expect(body.user.role).toBe('USER');
 
     // Assert password is NOT returned
@@ -61,17 +62,27 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should reject duplicate email with 409 status', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('duplicate');
+
     // First registration
-    await request(app).post('/api/auth/register').send({
-      email: 'duplicate@example.com',
-      password: 'Test1234!',
-    });
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: testPassword(),
+      });
 
     // Second registration with same email
-    const response = await request(app).post('/api/auth/register').send({
-      email: 'duplicate@example.com',
-      password: 'DifferentPassword1!',
-    });
+    const response = await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: 'DifferentPassword1!',
+      });
 
     const body = response.body as ErrorResponse;
     expect(response.status).toBe(409);
@@ -79,10 +90,15 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should validate input and reject invalid data', async () => {
-    const response = await request(app).post('/api/auth/register').send({
-      email: 'not-an-email',
-      password: 'weak',
-    });
+    const adminToken = await createAdminAndGetToken(app);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: 'not-an-email',
+        password: 'weak',
+      });
 
     const body = response.body as ErrorResponse;
     expect(response.status).toBe(400);
@@ -93,14 +109,19 @@ describe('POST /api/auth/register', () => {
 
 describe('POST /api/auth/login', () => {
   it('should successfully login with valid credentials', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('login-success');
     // First register a user
     const registerData = {
-      email: 'logintest@example.com',
-      password: 'Test1234!',
-      role: 'USER',
+      email,
+      password: testPassword(),
     };
 
-    await request(app).post('/api/auth/register').send(registerData);
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(registerData);
 
     // Login with same credentials
     const loginResponse = await request(app).post('/api/auth/login').send({
@@ -132,9 +153,11 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should reject login with non-existent email', async () => {
+    const email = uniqueEmail('nonexistent');
+
     const loginResponse = await request(app).post('/api/auth/login').send({
-      email: 'nonexistent@example.com',
-      password: 'Test1234!',
+      email,
+      password: testPassword(),
     });
 
     const body = loginResponse.body as ErrorResponse;
@@ -147,13 +170,20 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should reject login with incorrect password', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('wrong-password');
+
     // Register a user
     const registerData = {
-      email: 'wrongpassword@example.com',
+      email,
       password: 'CorrectPassword1!',
     };
 
-    await request(app).post('/api/auth/register').send(registerData);
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(registerData);
 
     const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
@@ -183,15 +213,24 @@ describe('POST /api/auth/login', () => {
 
 describe('GET /api/auth/me', () => {
   it('should return user info with valid token', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('tokentest');
+
     // Register and login to get token
     const registerData = {
-      email: 'tokentest@example.com',
-      password: 'Test1234!',
+      email,
+      password: testPassword(),
     };
-    await request(app).post('/api/auth/register').send({
-      email: registerData.email,
-      password: registerData.password,
-    });
+
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: registerData.email,
+        password: registerData.password,
+      });
+
     const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
@@ -243,9 +282,10 @@ describe('GET /api/auth/me', () => {
   });
 
   it('should return401 when token is expired', async () => {
+    const email = uniqueEmail('token-expired');
     // make expired token
     const expiredToken = jwt.sign(
-      { userId: 'test', email: 'test@example.com', role: 'USER' },
+      { userId: 'test', email, role: 'USER' },
       env.JWT_SECRET,
       { expiresIn: '-1h' } // Negative = alrealy expired
     );
@@ -262,16 +302,23 @@ describe('GET /api/auth/me', () => {
 
 describe('POST /api/auth/refresh', () => {
   it('should return new access token with valid refresh token', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('refresh');
+
     const registerData = {
-      email: 'refresh@example.com',
-      password: 'Test1234!',
+      email,
+      password: testPassword(),
     };
 
     // Register and login to get token
-    await request(app).post('/api/auth/register').send({
-      email: registerData.email,
-      password: registerData.password,
-    });
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: registerData.email,
+        password: registerData.password,
+      });
 
     const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
@@ -311,9 +358,10 @@ describe('POST /api/auth/refresh', () => {
   });
 
   it('should return 401 with expired refresh token', async () => {
+    const email = uniqueEmail('refresh-expired');
     // Create a refresh token thatexpired 1 day ago
     const expiredRefreshToken = jwt.sign(
-      { userId: 'test-id', email: 'test@example.com', role: 'USER' },
+      { userId: 'test-id', email, role: 'USER' },
       env.JWT_SECRET,
       { expiresIn: '-1d' }
     );
@@ -338,15 +386,22 @@ describe('POST /api/auth/refresh', () => {
 
 describe('POST /api/auth/logout', () => {
   it('should logout successfully with valid refresh token', async () => {
+    const adminToken = await createAdminAndGetToken(app);
+
+    const email = uniqueEmail('logout-success');
+
     const registerData = {
-      email: 'logout@example.com',
-      password: 'Test1234!',
+      email,
+      password: testPassword(),
     };
     // First register and login to get a refresh token
-    await request(app).post('/api/auth/register').send({
-      email: registerData.email,
-      password: registerData.password,
-    });
+    await request(app)
+      .post('/api/auth/register')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: registerData.email,
+        password: registerData.password,
+      });
 
     const loginResponse = await request(app).post('/api/auth/login').send({
       email: registerData.email,
@@ -385,9 +440,11 @@ describe('POST /api/auth/logout', () => {
   });
 
   it('should return 401 when logging out with non-existent token', async () => {
+    const email = uniqueEmail('logout-non-existent- token');
+
     // Create a valid JWT, but it's not in the database
     const validButNotStoredToken = jwt.sign(
-      { userId: 'test-id', email: 'test@example.com', role: 'USER' },
+      { userId: 'test-id', email, role: 'USER' },
       env.JWT_SECRET,
       { expiresIn: '7d' }
     );
