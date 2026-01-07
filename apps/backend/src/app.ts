@@ -7,6 +7,7 @@ import compression from 'compression';
 import { rateLimiterMiddleware } from './middleware/rateLimiter.js';
 import authRoutes from './routes/auth.js';
 import { securityConfig } from './config/security.js';
+import cookieParser from 'cookie-parser';
 
 const app: Express = express();
 
@@ -29,6 +30,9 @@ app.use(
 
 // 4. Body parsing - AFTER security, BEFORE routes
 app.use(express.json());
+
+// cookie parser
+app.use(cookieParser());
 
 // 5. Compression - reduce response size
 app.use(compression());

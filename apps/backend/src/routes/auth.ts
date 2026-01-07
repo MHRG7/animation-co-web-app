@@ -1,14 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { validate } from '../middleware/validation.js';
+import { isProduction } from '../config/env.js';
 import {
   registerSchema,
   loginSchema,
-  refreshSchema,
-  logoutSchema,
   type RegisterData,
   type LoginRequest,
-  type RefreshRequest,
-  type LogoutRequest,
   type RegisterResponse,
   type LoginResponse,
 } from '@animation-co/shared-types';
@@ -24,10 +21,17 @@ import { authenticateJWT } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/authorize.js';
 import { UserRole } from '@prisma/client';
 
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'strict' as const,
+  path: '/api/auth',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 const router: Router = Router();
 
 // POST / auth/register
-// NOTE: This endpoint will be admin-only protected later
 router.post(
   '/register',
   authenticateJWT,
@@ -73,10 +77,12 @@ router.post(
       const response: LoginResponse = {
         user: toApiUser(result.user),
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
       };
 
-      return res.status(200).json(response);
+      return res
+        .status(200)
+        .cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS)
+        .json(response);
     } catch (error) {
       logger.error('Login error:', { error });
 
@@ -87,38 +93,37 @@ router.post(
 );
 
 // POST /auth/refresh - Get new access token
-router.post(
-  '/refresh',
-  validate(refreshSchema),
-  async (req: Request<unknown, unknown, RefreshRequest>, res: Response) => {
-    try {
-      const { accessToken } = await refreshAccessToken(req.body.refreshToken);
-      return res.status(200).json({ accessToken });
-    } catch (error) {
-      logger.error('Refresh token error:', { error });
-      return res
-        .status(401)
-        .json({ error: 'Invalid or expired refresh token' });
-    }
+router.post('/refresh', async (req: Request, res: Response) => {
+  try {
+    const { refreshToken, accessToken } = await refreshAccessToken(
+      req.cookies['refreshToken'] as string
+    );
+
+    return res
+      .status(200)
+      .cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS)
+      .json({ accessToken });
+  } catch (error) {
+    logger.error('Refresh token error:', { error });
+    return res.status(401).json({ error: 'Invalid or expired refresh token' });
   }
-);
+});
 
 // POST /auth/logout - Revoke refresh token
-router.post(
-  '/logout',
-  validate(logoutSchema),
-  async (req: Request<unknown, unknown, LogoutRequest>, res: Response) => {
-    try {
-      await logout(req.body.refreshToken);
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    await logout(req.cookies['refreshToken'] as string);
 
-      // 204 = Success, no data return
-      return res.status(204).send();
-    } catch (error) {
-      logger.error('Logout error:', { error });
-      return res.status(401).json({ error: 'Invalid refresh token' });
-    }
+    // 204 = Success, no data return
+    return res
+      .status(204)
+      .clearCookie('refreshToken', { path: '/api/auth' })
+      .send();
+  } catch (error) {
+    logger.error('Logout error:', { error });
+    return res.status(401).json({ error: 'Invalid refresh token' });
   }
-);
+});
 
 // GET /auth/me - Get current user info (protected route)
 router.get('/me', authenticateJWT, (req: Request, res: Response) => {

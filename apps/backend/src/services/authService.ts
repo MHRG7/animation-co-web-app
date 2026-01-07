@@ -98,18 +98,7 @@ export async function login(data: LoginRequest): Promise<LoginResult> {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Calculate refresh token expiry
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
-  // Store refresh token in database
-  await prisma.refreshToken.create({
-    data: {
-      token: refreshToken,
-      userId: user.id,
-      expiresAt,
-    },
-  });
+  await storeRefreshToken(refreshToken, user.id);
 
   // Return token and user info (exclude password)
   return {
@@ -128,7 +117,7 @@ export async function login(data: LoginRequest): Promise<LoginResult> {
 // Refresh access token service
 export async function refreshAccessToken(
   refreshToken: string
-): Promise<{ accessToken: string }> {
+): Promise<{ refreshToken: string; accessToken: string }> {
   const prisma = getPrisma();
 
   // Verify refresh token signature
@@ -148,23 +137,34 @@ export async function refreshAccessToken(
     throw new Error('Refresh token not found');
   }
 
-  // Check if refresh token expired (database expiry)
   if (storedToken.expiresAt < new Date()) {
-    // Clean up expired token
     await prisma.refreshToken.delete({
       where: { id: storedToken.id },
     });
     throw new Error('Refresh token expired');
   }
 
-  // Generate new access token
-  const newAccessToken = generateAccessToken({
+  await prisma.refreshToken.delete({
+    where: { id: storedToken.id },
+  });
+
+  // Extract only the custom payload fields (exclude iat, exp from old token)
+  const newPayload: JWTPayload = {
     userId: decoded.userId,
     email: decoded.email,
     role: decoded.role,
-  });
+  };
 
-  return { accessToken: newAccessToken };
+  // Generate new refresh token
+  const newRefreshToken = generateRefreshToken(newPayload);
+
+  // Store new refresh token in database
+  await storeRefreshToken(newRefreshToken, decoded.userId);
+
+  // Generate new access tokens
+  const newAccessToken = generateAccessToken(newPayload);
+
+  return { refreshToken: newRefreshToken, accessToken: newAccessToken };
 }
 
 export async function logout(refreshToken: string): Promise<void> {
@@ -192,4 +192,19 @@ function generateRefreshToken(payload: JWTPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN as string | number, // '7d
   } as jwt.SignOptions);
+}
+
+async function storeRefreshToken(token: string, userId: string): Promise<void> {
+  const prisma = getPrisma();
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  await prisma.refreshToken.create({
+    data: {
+      token,
+      userId,
+      expiresAt,
+    },
+  });
 }

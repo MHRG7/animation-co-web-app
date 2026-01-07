@@ -34,24 +34,6 @@ export const loginSchema = z.object({
     .min(1, 'Password is required'),
 });
 
-/**
- * Token refresh request schema
- */
-export const refreshSchema = z.object({
-  refreshToken: z
-    .string({ error: 'Refresh token is required' })
-    .min(1, 'Refresh token is required'),
-});
-
-/**
- * Logout request schema
- */
-export const logoutSchema = z.object({
-  refreshToken: z
-    .string({ error: 'Refresh token is required' })
-    .min(1, 'Refresh token is required'),
-});
-
 // ============================================================================
 // TypeScript Types (infered from Zod schemas - DRY principle)
 // ============================================================================
@@ -59,8 +41,6 @@ export const logoutSchema = z.object({
 // Input types(what client send - before validation)
 export type RegisterRequest = z.input<typeof registerSchema>;
 export type LoginRequest = z.input<typeof loginSchema>;
-export type RefreshRequest = z.input<typeof refreshSchema>;
-export type LogoutRequest = z.input<typeof logoutSchema>;
 
 // Output types (what services recive - after validation & defaults)
 export type RegisterData = z.output<typeof registerSchema>;
@@ -82,7 +62,6 @@ export interface RegisterResponse {
 export interface LoginResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
 }
 
 /**

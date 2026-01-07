@@ -46,7 +46,6 @@ describe('POST /api/auth/register', () => {
         password: testPassword(),
       });
 
-    console.log('Register successful: ', response.body);
     // Assert response status
     expect(response.status).toBe(201);
 
@@ -109,6 +108,7 @@ describe('POST /api/auth/register', () => {
 
 describe('POST /api/auth/login', () => {
   it('should successfully login with valid credentials', async () => {
+    const agent = request.agent(app);
     const adminToken = await createAdminAndGetToken(app);
 
     const email = uniqueEmail('login-success');
@@ -124,7 +124,7 @@ describe('POST /api/auth/login', () => {
       .send(registerData);
 
     // Login with same credentials
-    const loginResponse = await request(app).post('/api/auth/login').send({
+    const loginResponse = await agent.post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
@@ -134,7 +134,6 @@ describe('POST /api/auth/login', () => {
 
     expect(loginResponse.status).toBe(200);
     expect(body).toHaveProperty('accessToken');
-    expect(body).toHaveProperty('refreshToken');
     expect(body).toHaveProperty('user');
 
     // Assert user object structur
@@ -148,8 +147,11 @@ describe('POST /api/auth/login', () => {
     // Assert tokens are non-empty strings
     expect(typeof body.accessToken).toBe('string');
     expect(body.accessToken.length).toBeGreaterThan(0);
-    expect(typeof body.refreshToken).toBe('string');
-    expect(body.refreshToken.length).toBeGreaterThan(0);
+
+    // Assert refresh token exists in the cookie
+    expect(loginResponse.headers['set-cookie']).toBeDefined();
+    expect(loginResponse.headers['set-cookie']![0]).toContain('refreshToken=');
+    expect(loginResponse.headers['set-cookie']![0]).toContain('HttpOnly');
   });
 
   it('should reject login with non-existent email', async () => {
@@ -301,7 +303,9 @@ describe('GET /api/auth/me', () => {
 });
 
 describe('POST /api/auth/refresh', () => {
-  it('should return new access token with valid refresh token', async () => {
+  it('should return new access and refresh token with valid refresh token', async () => {
+    const agent = request.agent(app);
+
     const adminToken = await createAdminAndGetToken(app);
 
     const email = uniqueEmail('refresh');
@@ -320,24 +324,27 @@ describe('POST /api/auth/refresh', () => {
         password: registerData.password,
       });
 
-    const loginResponse = await request(app).post('/api/auth/login').send({
+    const loginResponse = await agent.post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
 
-    const { refreshToken } = loginResponse.body as LoginResponse;
-
     // Use refresh token to get new access token
-    const refreshResponse = await request(app)
-      .post('/api/auth/refresh')
-      .send({ refreshToken });
+    const refreshResponse = await agent.post('/api/auth/refresh');
 
     const refreshBody = refreshResponse.body as RefreshTokenResponse;
+
     // Assert response
     expect(refreshResponse.status).toBe(200);
     expect(refreshBody).toHaveProperty('accessToken');
     expect(typeof refreshBody.accessToken).toBe('string');
     expect(refreshBody.accessToken.length).toBeGreaterThan(0);
+
+    expect(refreshResponse.headers['set-cookie']).toBeDefined();
+    expect(refreshResponse.headers['set-cookie']![0]).toContain(
+      'refreshToken='
+    );
+    expect(refreshResponse.headers['set-cookie']![0]).toContain('HttpOnly');
 
     // Verify new access token works
     const meResponse = await request(app)
@@ -348,9 +355,9 @@ describe('POST /api/auth/refresh', () => {
   });
 
   it('should return 401 with invalid refresh token', async () => {
-    const response = await request(app).post('/api/auth/refresh').send({
-      refreshToken: 'Invalid.token.here',
-    });
+    const response = await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', 'refreshToken=Invalid.token.here');
 
     const errorBody = response.body as ErrorResponse;
     expect(response.status).toBe(401);
@@ -368,7 +375,7 @@ describe('POST /api/auth/refresh', () => {
 
     const response = await request(app)
       .post('/api/auth/refresh')
-      .send({ refreshToken: expiredRefreshToken });
+      .set('Cookie', `refreshToken=${expiredRefreshToken}`);
 
     const errorBody = response.body as ErrorResponse;
     expect(response.status).toBe(401);
@@ -376,16 +383,18 @@ describe('POST /api/auth/refresh', () => {
   });
 
   it('should return 400 when refresh token is missing', async () => {
-    const response = await request(app).post('/api/auth/refresh').send({});
+    const response = await request(app).post('/api/auth/refresh');
 
     const errorBody = response.body as ErrorResponse;
-    expect(response.status).toBe(400);
-    expect(errorBody.error).toBe('Validation failed');
+    expect(response.status).toBe(401);
+    expect(errorBody.error).toBe('Invalid or expired refresh token');
   });
 });
 
 describe('POST /api/auth/logout', () => {
   it('should logout successfully with valid refresh token', async () => {
+    const agent = request.agent(app);
+
     const adminToken = await createAdminAndGetToken(app);
 
     const email = uniqueEmail('logout-success');
@@ -394,6 +403,7 @@ describe('POST /api/auth/logout', () => {
       email,
       password: testPassword(),
     };
+
     // First register and login to get a refresh token
     await request(app)
       .post('/api/auth/register')
@@ -403,26 +413,20 @@ describe('POST /api/auth/logout', () => {
         password: registerData.password,
       });
 
-    const loginResponse = await request(app).post('/api/auth/login').send({
+    await agent.post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });
 
-    const { refreshToken } = loginResponse.body as LoginResponse;
-
     // Logout with refresh token
-    const logoutResponse = await request(app)
-      .post('/api/auth/logout')
-      .send({ refreshToken });
+    const logoutResponse = await agent.post('/api/auth/logout');
 
     // Assert 204 No Content
     expect(logoutResponse.status).toBe(204);
     expect(logoutResponse.body).toEqual({}); // Empty body for 204
 
     // Verify refresh token is now invalid (deleted from DB)
-    const refreshAttempt = await request(app)
-      .post('/api/auth/refresh')
-      .send({ refreshToken });
+    const refreshAttempt = await agent.post('/api/auth/refresh');
 
     expect(refreshAttempt.status).toBe(401);
     const refreshBody = refreshAttempt.body as ErrorResponse;
@@ -432,7 +436,7 @@ describe('POST /api/auth/logout', () => {
   it('should return 401 when logging out with invalid token', async () => {
     const response = await request(app)
       .post('/api/auth/logout')
-      .send({ refreshToken: 'invalid.token.here' });
+      .set('Cookie', 'refreshToken=invalid.token.here');
 
     const errorBody = response.body as ErrorResponse;
     expect(response.status).toBe(401);
@@ -451,7 +455,7 @@ describe('POST /api/auth/logout', () => {
 
     const response = await request(app)
       .post('/api/auth/logout')
-      .send({ refreshToken: validButNotStoredToken });
+      .set('Cookie', `refreshToken=${validButNotStoredToken}`);
 
     expect(response.status).toBe(401);
     const errorBody = response.body as ErrorResponse;
@@ -459,10 +463,10 @@ describe('POST /api/auth/logout', () => {
   });
 
   it('should return 400 when refresh token is missing', async () => {
-    const response = await request(app).post('/api/auth/logout').send({});
+    const response = await request(app).post('/api/auth/logout');
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     const errorBody = response.body as ErrorResponse;
-    expect(errorBody.error).toBe('Validation failed');
+    expect(errorBody.error).toBe('Invalid refresh token');
   });
 });
