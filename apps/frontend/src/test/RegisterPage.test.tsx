@@ -5,7 +5,6 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { BrowserRouter, NavigateFunction } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
-import { apiClient } from '@/lib/axios';
 import { UserRole } from '@animation-co/shared-types';
 
 vi.mock('@lib/axios', () => ({
@@ -17,7 +16,7 @@ vi.mock('@lib/axios', () => ({
   setTokenSetter: vi.fn(),
 }));
 
-// Mock react_router-dom
+// Mock react-router-dom
 const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -51,7 +50,6 @@ function renderRegisterPage(): void {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
     mockNavigate.mockClear();
   });
 
@@ -72,7 +70,12 @@ describe('RegisterPage', () => {
       },
     };
 
-    // Tell the mock what to return when apiClient.post is called
+    // First call: auto-refresh on mount (will fail - no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
+
+    // Second call: the actual register endpoint
     vi.mocked(apiClient.post).mockResolvedValueOnce(mockRegisterResponse);
 
     // Render the component
@@ -98,11 +101,11 @@ describe('RegisterPage', () => {
     });
 
     // ASSERT: Success screen should appear
-    const successMessage = await screen.findByText(/registeration successful/i);
+    const successMessage = await screen.findByText(/registration successful/i);
     expect(successMessage).toBeInTheDocument();
   });
 
-  it('should show error when password do not match', async () => {
+  it('should show error when passwords do not match', async () => {
     // ARRANGE: import the mocked axios
     const { apiClient } = await import('@/lib/axios');
 
@@ -128,19 +131,29 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument();
 
     // Api should not have been called
-    expect(apiClient.post).not.toHaveBeenCalled();
+    expect(apiClient.post).not.toHaveBeenCalledWith(
+      '/auth/register',
+      expect.anything()
+    );
   });
 
   it('should show error when email already exists', async () => {
+    const { apiClient } = await import('@/lib/axios');
+
     // ARRANGE: Mock API rejection with 409
     const mockErrorResponse = {
       response: {
         status: 409,
         data: {
-          error: 'Email already exists', // This message apears in the UI
+          error: 'Email already exists', // This message appears in the UI
         },
       },
     };
+
+    // First call: auto-refresh on mount (will fail - no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
 
     vi.mocked(apiClient.post).mockRejectedValueOnce(mockErrorResponse);
 
@@ -156,7 +169,7 @@ describe('RegisterPage', () => {
 
     await user.click(screen.getByRole('button', { name: /register/i }));
 
-    // ASSERT: Error message should apear
+    // ASSERT: Error message should appear
     const errorMessage = await screen.findByText(/email already exists/i);
     expect(errorMessage).toBeInTheDocument();
   });
@@ -179,7 +192,7 @@ describe('RegisterPage', () => {
 
     await user.click(screen.getByRole('button', { name: /register/i }));
 
-    // ASSERT: Zod error message apears (from frontend validation)
+    // ASSERT: Zod error message appears (from frontend validation)
     const errorMessage = await screen.findByText(
       /password must contain at least one uppercase letter, one lowercase letter, and one number/i
     );
@@ -187,12 +200,20 @@ describe('RegisterPage', () => {
     expect(errorMessage).toBeInTheDocument();
 
     // ASSERT: API was NOT called (frontend validation stopped it)
-    expect(apiClient.post).not.toHaveBeenCalled();
+    expect(apiClient.post).not.toHaveBeenCalledWith(
+      '/auth/register',
+      expect.anything()
+    );
   });
 
   it('should show loading state during registration', async () => {
     // ARRANGE
     const { apiClient } = await import('@/lib/axios');
+
+    // First call: auto-refresh on mount (will fail - no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
 
     // Mock API with a delay (so we can check loading state)
     vi.mocked(apiClient.post).mockImplementation(

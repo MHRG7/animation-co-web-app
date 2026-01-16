@@ -18,14 +18,13 @@ vi.mock('@lib/axios', () => ({
 describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
+    // localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  // __________ Outside AuthProvider __________
   it('throws error when used outside AuthProvider', () => {
     // Create a component that tries to use useAuth
     function TestComponent(): React.JSX.Element {
@@ -39,12 +38,8 @@ describe('useAuth', () => {
     }).toThrow('useAuth must be used within AuthProvider');
   });
 
-  // __________ Fresh User, No refresh token exists __________
-  it('does not auto-refresh when no refresh token exists (fresh user)', async () => {
+  it('remains unauthenticated when refresh token is invalid or missing', async () => {
     const { apiClient } = await import('@/lib/axios');
-
-    // Mock localStorage to return null (no refresh token)
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
 
     // TestComponent to display auth state
     function TestComponent(): React.JSX.Element {
@@ -75,32 +70,30 @@ describe('useAuth', () => {
       </QueryClientProvider>
     );
 
+    // With httpOnly cookies, frontend always attempts refresh
+    // Backend returns 401 if no valid cookie exists
+    // Mock /auth/refresh to reject (simulating no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
+
     // Wait for loading to complete
     await waitFor(() => {
       expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
     });
 
-    // Verify /auth/refresh was NOT called
-    expect(apiClient.post).not.toHaveBeenCalledWith(
-      '/auth/refresh',
-      expect.anything()
-    );
+    // Verify /auth/refresh was called
+    expect(apiClient.post).toHaveBeenCalledWith('/auth/refresh');
 
     // Verify user is not authenticated
     expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('user-email')).toHaveTextContent('null');
   });
 
-  // __________ Token exists, Auto-refresh __________
   it('auto-refreshes on mount when refresh token exists', async () => {
     const { apiClient } = await import('@/lib/axios');
 
-    // Mock localStorage to return a refresh token
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(
-      'valid-refresh-token'
-    );
-
-    //Mock /auth/refresh to return access token
+    // Mock /auth/refresh to return access token
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       data: {
         accessToken: 'new-access-token',
@@ -114,8 +107,8 @@ describe('useAuth', () => {
           id: 1,
           email: 'test@example.com',
           role: UserRole.USER,
+          isActive: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       },
     });
@@ -158,9 +151,7 @@ describe('useAuth', () => {
     });
 
     // Verify /auth/refresh was called with correct payload
-    expect(apiClient.post).toHaveBeenCalledWith('/auth/refresh', {
-      refreshToken: 'valid-refresh-token',
-    });
+    expect(apiClient.post).toHaveBeenCalledWith('/auth/refresh');
 
     // Verify /auth/me was called
     expect(apiClient.get).toHaveBeenCalledWith('/auth/me');
@@ -172,26 +163,24 @@ describe('useAuth', () => {
     );
   });
 
-  // __________ Login mutation test __________
   it('login mutation stores tokens and authenticates user', async () => {
     const { apiClient } = await import('@/lib/axios');
 
-    // Mock localStorage
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+    // First call: auto-refresh on mount (will fail - no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
 
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-
-    // Mock /auth/login response
+    // Second call: the actual /auth/login endpoint
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       data: {
         accessToken: 'access-token-123',
-        refreshToken: 'refresh-token-456',
         user: {
           id: 1,
           email: 'test@example.com',
           role: UserRole.USER,
+          isActive: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       },
     });
@@ -203,8 +192,8 @@ describe('useAuth', () => {
           id: 1,
           email: 'test@example.com',
           role: UserRole.USER,
+          isActive: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       },
     });
@@ -267,35 +256,29 @@ describe('useAuth', () => {
     // Verify /auth/me was called
     expect(apiClient.get).toHaveBeenCalledWith('/auth/me');
 
-    // Verify refresh token was stored in localStorage
-    expect(setItemSpy).toHaveBeenCalledWith(
-      'refreshToken',
-      'refresh-token-456'
-    );
-
     // Verify user email is displayed
     expect(screen.getByTestId('user-email')).toHaveTextContent(
       'test@example.com'
     );
   });
 
-  // __________ Register Muutation test __________
   it('register mutation does NOT store tokens (user must login after)', async () => {
     const { apiClient } = await import('@/lib/axios');
 
-    // Mock localStorage
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+    // First call: auto-refresh on mount (will fail - no cookie)
+    vi.mocked(apiClient.post).mockRejectedValueOnce({
+      response: { status: 401 },
+    });
 
-    // Mock /auth/register response
+    // Second call: the actual /auth/register endpoint
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       data: {
         user: {
           id: 1,
           email: 'newuser@example.com',
           role: UserRole.USER,
+          isActive: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       },
     });
@@ -351,27 +334,16 @@ describe('useAuth', () => {
       expect(apiClient.post).toHaveBeenCalledWith('/auth/register', {
         email: 'newuser@example.com',
         password: 'SecurePass123!',
-        // role: UserRole.USER,
       });
     });
-
-    // Verify refresh token was NOT stored
-    expect(setItemSpy).not.toHaveBeenCalled();
 
     // Verify user is still NOT authenticated
     expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('user-email')).toHaveTextContent('null');
   });
 
-  // __________ Logout mutation __________
   it('logout mutation clears token and revokes refresh token on server', async () => {
     const { apiClient } = await import('@/lib/axios');
-
-    // Set up logged-in state: mock localStorage with existing refresh token
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(
-      'existing-refresh-token'
-    );
-    const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
 
     // Mock auto-refresh on mount (to establish logged-in state)
     vi.mocked(apiClient.post).mockResolvedValueOnce({
@@ -386,8 +358,8 @@ describe('useAuth', () => {
           id: 1,
           email: 'test@example.com',
           role: UserRole.USER,
+          isActive: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       },
     });
@@ -453,12 +425,7 @@ describe('useAuth', () => {
     });
 
     // Verify /auth/logout was called with refresh token
-    expect(apiClient.post).toHaveBeenCalledWith('/auth/logout', {
-      refreshToken: 'existing-refresh-token',
-    });
-
-    // Verify refresh token was removed from localStorage
-    expect(removeItemSpy).toHaveBeenCalledWith('refreshToken');
+    expect(apiClient.post).toHaveBeenCalledWith('/auth/logout');
 
     // Verify user is logged out
     expect(screen.getByTestId('user-email')).toHaveTextContent('null');

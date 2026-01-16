@@ -324,7 +324,7 @@ describe('POST /api/auth/refresh', () => {
         password: registerData.password,
       });
 
-    const loginResponse = await agent.post('/api/auth/login').send({
+    await agent.post('/api/auth/login').send({
       email: registerData.email,
       password: registerData.password,
     });

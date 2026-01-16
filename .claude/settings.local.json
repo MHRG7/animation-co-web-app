@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "Bash(pnpm typecheck)",
-      "Bash(pnpm lint)"
+      "Bash(pnpm lint)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

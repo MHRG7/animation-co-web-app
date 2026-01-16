@@ -20,7 +20,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Send cookies if needed later
+  withCredentials: true, // Send cookies
 });
 
 // Response interceptor (automatically attach token to requests)
@@ -36,15 +36,11 @@ apiClient.interceptors.request.use(
 );
 
 async function refreshAccessToken(): Promise<string> {
-  const refreshToken = localStorage.getItem('refreshToken');
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  const response = await axios.post<RefreshTokenResponse>('/api/auth/refresh', {
-    refreshToken: refreshToken,
-  });
+  const response = await axios.post<RefreshTokenResponse>(
+    '/api/auth/refresh',
+    {},
+    { withCredentials: true }
+  );
 
   return response.data.accessToken;
 }
@@ -73,7 +69,6 @@ apiClient.interceptors.response.use(
         return await apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(refreshError as Error);
       }

@@ -76,7 +76,7 @@ export function RegisterPage(): React.JSX.Element {
           <div className="text-center">
             <div className="mb-4 text-green-500 text-5xl">✓</div>
             <h1 className="text-2xl font-bold mb-2">
-              Registeration Successful!
+              Registration Successful!
             </h1>
             <p className="text-gray-600">Redirecting to login page...</p>
           </div>

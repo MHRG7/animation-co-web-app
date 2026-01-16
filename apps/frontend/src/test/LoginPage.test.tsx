@@ -51,7 +51,6 @@ function renderLoginPage(): void {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
     mockNavigate.mockClear();
   });
 
@@ -63,7 +62,6 @@ describe('LoginPage', () => {
     const mockLoginResponse = {
       data: {
         accessToken: 'mock-access-token',
-        refreshToken: 'mock-refresh-token',
         user: {
           id: '123',
           email: 'test@example.com',
@@ -101,9 +99,6 @@ describe('LoginPage', () => {
         password: 'Test1234!',
       });
     });
-
-    // Check refresh token was saved to localStorage
-    expect(localStorage.getItem('refreshToken')).toBe('mock-refresh-token');
   });
 
   it('should show error message when login fails', async () => {
@@ -147,7 +142,6 @@ describe('LoginPage', () => {
             resolve({
               data: {
                 accessToken: 'token',
-                refreshToken: 'refresh',
                 user: {
                   id: '1',
                   email: 'test@example.com',
@@ -186,7 +180,7 @@ describe('LoginPage', () => {
     });
   });
 
-  it('should disable from inputs during login', async () => {
+  it('should disable form inputs during login', async () => {
     const { apiClient } = await import('@/lib/axios');
 
     // Mock API with delay
@@ -197,7 +191,6 @@ describe('LoginPage', () => {
             resolve({
               data: {
                 accessToken: 'token',
-                refreshToken: 'refresh',
                 user: {
                   id: '1',
                   email: 'test@example.com',
@@ -253,13 +246,12 @@ describe('LoginPage', () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       data: {
         accessToken: 'token',
-        refreshToken: 'refresh',
         user: {
           id: '1',
           email: 'test@example.com',
           role: 'USER',
-          isAvtive: true,
-          createAt: '2025-01-01T00:00:00.000Z',
+          isActive: true,
+          createdAt: '2025-01-01T00:00:00.000Z',
         },
       },
     });
@@ -325,7 +317,7 @@ describe('LoginPage', () => {
     // Try to submit empty form
     await user.click(loginButton);
 
-    // ASSERT: From should be invalid (HTML5 validation)
+    // ASSERT: Form should be invalid (HTML5 validation)
     expect((emailInput as HTMLInputElement).validity.valid).toBe(false);
     expect((passwordInput as HTMLInputElement).validity.valid).toBe(false);
 

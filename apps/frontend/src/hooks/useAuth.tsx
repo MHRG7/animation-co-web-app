@@ -22,14 +22,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper functions for token storage
-const getRefreshToken = (): string | null =>
-  localStorage.getItem('refreshToken');
-
-const setRefreshTokensStorage = (refreshToken: string): void => {
-  localStorage.setItem('refreshToken', refreshToken);
-};
-
 // Auth Provider
 export function AuthProvider({
   children,
@@ -56,26 +48,17 @@ export function AuthProvider({
     enabled: !!accessToken,
   });
 
-  // On mount, check if we have refresh token and get access token
+  // On mount, get access token
   useEffect(() => {
-    const refreshToken = getRefreshToken();
-
-    if (!refreshToken) {
-      setIsRefreshing(false);
-      return;
-    }
-
     // Auto-refresh on mount to get access token
     const fetchAccessToken = async (): Promise<void> => {
       try {
-        const response = await apiClient.post<RefreshTokenResponse>(
-          '/auth/refresh',
-          { refreshToken }
-        );
+        const response =
+          await apiClient.post<RefreshTokenResponse>('/auth/refresh');
         setAccessToken(response.data.accessToken);
       } catch {
-        // Refresh failed, clear invalid refresh token
-        localStorage.removeItem('refreshToken');
+        // Silent fail is intentional - no cookie or expired token
+        // means user simply isn't logged in
       } finally {
         setIsRefreshing(false);
       }
@@ -93,7 +76,6 @@ export function AuthProvider({
   // Helper to clear all tokens
   const clearTokens = (): void => {
     setAccessToken(null);
-    localStorage.removeItem('refreshToken');
   };
 
   const loginMutation = useMutation({
@@ -106,7 +88,6 @@ export function AuthProvider({
     },
     onSuccess: data => {
       setAccessToken(data.accessToken);
-      setRefreshTokensStorage(data.refreshToken);
       queryClient.setQueryData(['user'], data.user); // Update cache
     },
   });
@@ -132,10 +113,7 @@ export function AuthProvider({
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const refreshToken = getRefreshToken();
-      if (refreshToken) {
-        await apiClient.post('/auth/logout', { refreshToken });
-      }
+      await apiClient.post('/auth/logout');
     },
     onSettled: () => {
       clearTokens();
