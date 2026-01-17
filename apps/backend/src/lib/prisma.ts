@@ -6,7 +6,7 @@ let prisma: PrismaClient | undefined;
 export function getPrisma(): PrismaClient {
   // Create new client if needed
   prisma ??= new PrismaClient({
-    log: isTest ? [] : ['error', 'warn'],
+    log: isTest ? [] : ['query', 'error', 'warn'],
   });
 
   return prisma;

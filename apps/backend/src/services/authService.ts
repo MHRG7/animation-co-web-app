@@ -5,6 +5,7 @@ import type { LoginRequest, RegisterData } from '@animation-co/shared-types';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import { JWTPayload } from '../types/auth.js';
+import logger from '../lib/logger.js';
 
 /**
  * Internal service layer types (database representation)
@@ -100,6 +101,11 @@ export async function login(data: LoginRequest): Promise<LoginResult> {
 
   await storeRefreshToken(refreshToken, user.id);
 
+  // Fire-and-forget cleanup (don't slow down login)
+  cleanupExpiredTokens().catch((err: unknown) => {
+    logger.error('Failed to cleanup expired tokens', { error: err });
+  });
+
   // Return token and user info (exclude password)
   return {
     accessToken,
@@ -181,7 +187,7 @@ export async function logout(refreshToken: string): Promise<void> {
  */
 function generateAccessToken(payload: JWTPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN, // '15m
+    expiresIn: env.JWT_EXPIRES_IN, // '15m'
   } as jwt.SignOptions);
 }
 
@@ -190,7 +196,7 @@ function generateAccessToken(payload: JWTPayload): string {
  */
 function generateRefreshToken(payload: JWTPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN as string | number, // '7d
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN, // '7d'
   } as jwt.SignOptions);
 }
 
@@ -205,6 +211,22 @@ async function storeRefreshToken(token: string, userId: string): Promise<void> {
       token,
       userId,
       expiresAt,
+    },
+  });
+}
+
+/**
+ * Delete expired refresh tokens (lazy cleanup)
+ * Called opportunistically during auth operations
+ */
+async function cleanupExpiredTokens(): Promise<void> {
+  const prisma = getPrisma();
+
+  await prisma.refreshToken.deleteMany({
+    where: {
+      expiresAt: {
+        lt: new Date(),
+      },
     },
   });
 }

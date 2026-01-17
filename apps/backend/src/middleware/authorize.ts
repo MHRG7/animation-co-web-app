@@ -4,7 +4,9 @@ import logger from '../lib/logger.js';
 
 export function requireRole(allowedRoles: UserRole[]) {
   if (allowedRoles.length === 0) {
-    throw new Error();
+    throw new Error(
+      'requireRole must be called with at least one allowed role'
+    );
   }
 
   return (req: Request, res: Response, next: NextFunction): void => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { registerSchema } from '@animation-co/shared-types';
+import { registerSchema, UserRole } from '@animation-co/shared-types';
 
 export function RegisterPage(): React.JSX.Element {
   // Form state
@@ -15,7 +15,7 @@ export function RegisterPage(): React.JSX.Element {
   const [success, setSuccess] = useState(false);
 
   // Hooks
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   // Handle form submssion
@@ -63,8 +63,9 @@ export function RegisterPage(): React.JSX.Element {
     }
   };
 
-  // Redirect if already logged in
-  if (isAuthenticated) {
+  // Only redirect non-admin users
+  // Admins need access to register new users
+  if (isAuthenticated && user?.role !== UserRole.ADMIN) {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -35,7 +35,7 @@ export function AuthProvider({
 
   // Fetch current user (if token exists)
   const { data: user, isLoading } = useQuery({
-    queryKey: ['user', accessToken],
+    queryKey: ['user'],
     queryFn: async () => {
       if (!accessToken) {
         return null;

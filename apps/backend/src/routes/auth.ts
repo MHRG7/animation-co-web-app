@@ -84,7 +84,9 @@ router.post(
         .cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS)
         .json(response);
     } catch (error) {
-      logger.error('Login error:', { error });
+      logger.error('Login error:', {
+        message: error instanceof Error ? error.message : String(error),
+      });
 
       // Security: Always return 401 for login failures (vague error)
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -104,7 +106,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
       .cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS)
       .json({ accessToken });
   } catch (error) {
-    logger.error('Refresh token error:', { error });
+    logger.error('Refresh token error:', {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return res.status(401).json({ error: 'Invalid or expired refresh token' });
   }
 });

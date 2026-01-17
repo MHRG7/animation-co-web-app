@@ -6,6 +6,9 @@
   "main": "./dist/server.js",
   "module": "./dist/server.js",
   "types": "./dist/server.d.ts",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc && tsc-alias",

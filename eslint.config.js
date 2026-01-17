@@ -16,6 +16,7 @@ export default typescript.config(
       '.eslintrc.js',
       'coverage/',
       '**/*.d.ts',
+      '**/prisma/',
     ],
   },
   js.configs.recommended,

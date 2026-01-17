@@ -888,3 +888,85 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
    - Multiple layers protect against XSS attacks
 
 ---
+
+## 🔐 Phase 2A.5: Bug Fixes & Technical Debt (January 17, 2026)
+
+**Goal**: Fix bugs discovered during manual testing and address technical debt
+
+### ✅ Completed
+
+**Bug Fixes**:
+- Fixed query key mismatch in useAuth.tsx (removed accessToken from query key)
+- Fixed axios interceptor refresh loop (exclude ALL /auth/ endpoints, not just /refresh)
+- Fixed RegisterPage redirect (allow ADMIN users to access for user registration)
+- Added root route redirect (/ → /login) - noted as TODO
+
+**Technical Debt Resolved**:
+- Added error message in authorize.ts (was empty `throw new Error()`)
+- Removed unnecessary type assertion in authService.ts
+- Fixed comment typos in authService.ts
+- Added Prisma graceful shutdown in server.ts (SIGTERM/SIGINT handlers)
+- Added Prisma query logging for development (`['query', 'error', 'warn']`)
+- Added refresh token cleanup mechanism (lazy cleanup on login)
+- Added ESLint ignore for prisma folder
+
+**Infrastructure**:
+- Created database seed file (prisma/seed.ts) with admin and test users
+- Added prisma seed config to package.json
+
+### 📚 Key Learnings
+
+1. **React Query Cache Keys**:
+   - Query keys are "folder labels" for the cache
+   - `['user', accessToken]` and `['user']` are different cache entries
+   - `setQueryData` must match the exact query key used by `useQuery`
+   - User data doesn't change based on token - simpler key is better
+
+2. **Axios Interceptor Scope**:
+   - `_retry` flag prevents retrying the SAME request twice
+   - It doesn't prevent interceptor from triggering on different endpoints
+   - Must explicitly check URL to exclude auth endpoints from refresh logic
+
+3. **Frontend/Backend Design Alignment**:
+   - RegisterPage redirected ALL authenticated users (frontend assumption: self-registration)
+   - Backend required ADMIN role for registration (backend assumption: admin-only)
+   - Fix: Check role before redirecting - admins need access to register users
+
+4. **Graceful Shutdown Pattern**:
+   - `server.close()` stops accepting new connections
+   - Callback-based APIs don't work with async/await directly
+   - Use `.then()/.catch()` inside callbacks for async operations
+   - Add timeout for forced shutdown if graceful takes too long
+
+5. **Lazy Cleanup Pattern**:
+   - Alternative to scheduled jobs for cleanup tasks
+   - Run cleanup opportunistically during related operations
+   - Fire-and-forget with error logging (don't slow down main operation)
+   - Good for development, may need cron job for high-traffic production
+
+6. **Database Seeding**:
+   - `prisma.upsert()` creates if not exists, updates if exists
+   - Seed file config in package.json: `"prisma": { "seed": "tsx prisma/seed.ts" }`
+   - Run with `npx prisma db seed`
+   - Essential for consistent development environment
+
+### Files Modified
+
+**Backend**:
+- [src/server.ts](apps/backend/src/server.ts) - Graceful shutdown handlers
+- [src/lib/prisma.ts](apps/backend/src/lib/prisma.ts) - Query logging
+- [src/middleware/authorize.ts](apps/backend/src/middleware/authorize.ts) - Error message
+- [src/services/authService.ts](apps/backend/src/services/authService.ts) - Token cleanup, fixed comments
+- [src/routes/auth.ts](apps/backend/src/routes/auth.ts) - Better error logging
+- [prisma/seed.ts](apps/backend/prisma/seed.ts) - NEW: Database seeding
+- [package.json](apps/backend/package.json) - Seed config
+
+**Frontend**:
+- [src/hooks/useAuth.tsx](apps/frontend/src/hooks/useAuth.tsx) - Fixed query key
+- [src/lib/axios.ts](apps/frontend/src/lib/axios.ts) - Fixed interceptor scope
+- [src/pages/RegisterPage.tsx](apps/frontend/src/pages/RegisterPage.tsx) - Admin access fix
+
+**Config**:
+- [eslint.config.js](eslint.config.js) - Ignore prisma folder
+
+---

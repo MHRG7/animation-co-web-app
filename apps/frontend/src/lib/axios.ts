@@ -53,8 +53,15 @@ apiClient.interceptors.response.use(
       _retry: boolean;
     };
 
+    // Don't try to refresh if the refresh endpoint itself failed
+    const isAuthRequest = originalRequest.url?.includes('/auth/');
+
     // Handle 401 Unauthorized (token expired)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRequest
+    ) {
       originalRequest._retry = true;
 
       try {
